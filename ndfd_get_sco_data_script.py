@@ -207,7 +207,7 @@ num_days_per_year = 365
 
 # loop to fill in datetime_list
 for i in range(1, (num_days_per_year * num_years + 1)):
-    start_step = pandas.to_datetime(time_list[i-1], format = "%Y-%m-%d %H:%M").tz_localize(tz = "UCT")
+    start_step = pandas.to_datetime(datetime_list[i-1], format = "%Y-%m-%d %H:%M").tz_localize(tz = "UCT")
     next_step = start_step + pandas.Timedelta('1 days')
     next_step_str = next_step.strftime("%Y-%m-%d %H:%M")
     datetime_list.append(next_step_str)
