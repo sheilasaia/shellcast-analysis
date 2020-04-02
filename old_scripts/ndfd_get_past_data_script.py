@@ -25,13 +25,13 @@ import numpy
 import datetime as dt
 import re
 
-from pydap.client import open_url
+from pydap.client import open_dods
 from urllib.request import urlopen, urlretrieve, urlcleanup
 
 # %% set paths
 
 # define data directory path (for export)
-data_dir = '/Users/sheila/Documents/bae_shellcast_project/shellcast_analysis/ndfd_get_data/data/ndfd_sco_data/'
+data_dir = '/Users/sheila/Documents/bae_shellcast_project/shellcast_analysis/ndfd_get_data/data/ndfd_past_data/'
 
 # %% load functions
 
@@ -157,6 +157,35 @@ print(qpf_datetime_list)
 test = min(pop12_datetime_list)
 test_str = dt.datetime.strftime(test, "%Y%m%d%H%M")
 test_str
+
+# %%
+#https://www.ncdc.noaa.gov/thredds/catalog/ndfd/file/catalog.html #catalog
+#temp_data_url = "https://www.ncdc.noaa.gov/thredds/dodsC/ndfd/file/" + "201808/20180822/" + "YDCZ98_KWBN_" + test_str + ".dods"
+temp_data_url = "https://www.ncdc.noaa.gov/thredds/dodsC/ndfd/file/" + "201808/20180801/" + "YICZ98_KWBN_201808010446.dods"
+temp_ndfd_data = open_dods(temp_data_url)
+temp_ndfd_data
+
+# %%
+temp_x = temp_ndfd_data['x'][:]
+temp_y = temp_ndfd_data['y'][:]
+#temp_pop12 = temp_ndfd_data['Total_precipitation_surface_12_Hour_Accumulation_probability_above_0p254'] # pop12
+temp_qpf = temp_ndfd_data['Total_precipitation_surface_6_Hour_Accumulation'] # qpf
+
+# save pop12 dimentions
+#temp_pop12_dims = temp_pop12.dimensions
+#temp_pop12_time_dim = temp_pop12_dims[0]
+
+# save qpf dimentions
+temp_qpf_dims = temp_qpf.dimensions
+temp_qpf_time_dim = temp_qpf_dims[0]
+
+# save list of pop12 time dimentions
+#temp_pop12_time_np = numpy.array(temp_pop12[temp_pop12_time_dim][:])
+#temp_pop12_time_np
+
+# save list of qpf time dimentions
+temp_qpf_time_np = numpy.array(temp_qpf[temp_qpf_time_dim][:])
+temp_qpf_time_np
 
 # %% Get (pop12) Data Function
 
