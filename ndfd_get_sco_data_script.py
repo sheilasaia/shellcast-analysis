@@ -2,198 +2,285 @@
 """
 ndfd_get_sco_data_script.py
 
-This script grabs data from the NC State Climate Office TDS server (), reformats it, and stores it in a local directory.
+This script grabs historic National Digital Forecast Dataset (NDFD) data from the NC State Climate Office (SCO) TDS server, reformats it, and stores it in a local directory.
 
-Last Updated: 20200326
+Last Updated: 20200330
 Created By: Sheila (ssaia@ncsu.edu)
 """
 
-# %% To Do List
+# %% to do list
 
 # TODO figure out lat/long vs x/y issues
+# TODO is there a more efficient way to loop through the different hours of data? (in the tidy data function)
 
 
-# %% Help
+# %% help
 
 # pydap help: https://pydap.readthedocs.io/en/latest/developer_data_model.html
 # thredds help (with python code): https://oceanobservatories.org/thredds-quick-start/#python
 
-# %% Load Libraries
+# %% load libraries
 
 import pandas
 import numpy
 import datetime as dt
 from pydap.client import open_url
 
-# %% Set Paths
+# %% set paths
 
 # define data directory path (for export)
 data_dir = '/Users/sheila/Documents/bae_shellcast_project/shellcast_analysis/ndfd_get_data/data/ndfd_sco_data/'
 
-# define serve path
-ndfd_sco_server_url = 'https://tds.climate.ncsu.edu/thredds/dodsC/nws/ndfd/'
+# %% datetime format conversion function
 
-# %% Get (pop12) Data Function
-
-def get_sco_ndfd_pop12_data(base_server_url, temp_datetime_uct_str):
+def convert_sco_ndfd_datetime_str(datetime_str):
     """
-    Description: Returns a dataframe of pop12 NDFD data for a specified date
+    Description: Takes string of format "%Y-%m-%d %H:%M" and converts it to the "%Y%m%d%H", "%Y%m%d", and "%Y%m" formats
     Parameters:
-        base_server_url (str): Base URL (string) for the SCO NDFD TDS server
-        temp_datetime_uct_str (str): Datetime (string) in "%Y-%m-%d %H:%M" format (e.g., "2016-01-01 00:00") with timezone = UCT
+        datetime_str (str): A string in "%Y-%m-%d %H:%M" format (e.g., "2016-01-01 00:00")
     Returns: 
-        temp_pop12_data_pd (data frame): A pandas dataframe
-        temp_year_month_day_hour (str): A string of the datetime in "%Y%m%d%H" format (e.g, "2016010100") with timezone = UCT
+        datetime_ym_str (str): A string in "%Y%m" format (e.g, "201601")
+        datetime_ymd_str (str): A string in "%Y%m%d" format (e.g, "20160101")
+        datetime_ymdh_str (str): A string in "%Y%m%d%H" format (e.g, "2016010100")
+        
     """
-    
-    temp_date_str, temp_time_str = temp_datetime_uct_str.split()
-    temp_year_str, temp_month_str, temp_day_str = temp_date_str.split("-")
-    temp_hour_str, temp_sec_str = temp_time_str.split(":")
+    date_str, time_str = datetime_str.split()
+    year_str, month_str, day_str = date_str.split("-")
+    hour_str, sec_str = time_str.split(":")
     
     # define datetime combinations
-    temp_year_month = temp_year_str + temp_month_str
-    temp_year_month_day = temp_year_str + temp_month_str + temp_day_str
-    temp_year_month_day_hour = temp_year_str + temp_month_str + temp_day_str + temp_hour_str
+    datetime_ym_str = year_str + month_str
+    datetime_ymd_str = year_str + month_str + day_str
+    datetime_ymdh_str = year_str + month_str + day_str + hour_str
+    
+    return datetime_ym_str, datetime_ymd_str, datetime_ymdh_str
+
+# %% get ndfd data function
+
+def get_sco_ndfd_data(base_server_url, datetime_uct_str):
+    """
+    Description: Returns a dataframe of SCO NDFD data for a specified datetime
+    Parameters:
+        base_server_url (str): Base URL (string) for the SCO NDFD TDS server
+        datetime_uct_str (str): A string in "%Y-%m-%d %H:%M" format (e.g., "2016-01-01 00:00") with timezone = UCT
+    Returns: 
+        ndfd_data (pydap Dataset): Pydap dataset object for specified datetime
+    Required:
+        must load and run convert_sco_ndfd_datetime_str() function
+    """
+    # convert datetime string
+    year_month, year_month_day, year_month_day_hour = convert_sco_ndfd_datetime_str(datetime_uct_str)
     
     # define data url
-    temp_date_url = temp_year_month + "/" + temp_year_month_day + "/" + temp_year_month_day_hour
-    temp_data_url = base_server_url + temp_date_url + "ds.midatlan.oper.bin"
+    date_str_url = year_month + "/" + year_month_day + "/" + year_month_day_hour
+    data_url = base_server_url + date_str_url + "ds.midatlan.oper.bin"
+    # needs to be in format https://tds.climate.ncsu.edu/thredds/dodsC/nws/ndfd/YYYYMM/YYYYMMDD/YYYYMMDDHHds.midatlan.oper.bin.html
     
     # get data from SCO server url and store it on pc
-    temp_ndfd_data = open_url(temp_data_url)
+    ndfd_data = open_url(data_url)
     
-    # save x, y, and pop12 data
-    temp_x = temp_ndfd_data['x'][:]
-    temp_y = temp_ndfd_data['y'][:]
-    temp_pop12 = temp_ndfd_data['Total_precipitation_surface_12_Hour_Accumulation_probability_above_0p254'] # pop12
+    return ndfd_data
+
+# %% tidy either pop12 or qpf data function
+
+def tidy_sco_ndfd_data(ndfd_data, datetime_uct_str, ndfd_var):
+    """
+    Description: Returns a tidy dataframe of qpf SCO NDFD data for a specified date
+    Parameters:
+        ndfd_data (pydap Dataset): Pydap dataset object for specified datetime, from get_sco_ndfd_data() function
+        datetime_uct_str (str): A string in "%Y-%m-%d %H:%M" format (e.g., "2016-01-01 00:00") with timezone = UCT
+        ndfd_var (str): either "qpf" or "pop12", the SCO NDFD variable of interest
+    Returns: 
+        var_data_pd (data frame): A pandas dataframe with SCO NDFD variable data
+        datetime_ymdh_str (str): A string in "%Y%m%d%H" format (e.g, "2016010100")
+    Required:
+        must load and run convert_sco_ndfd_datetime_str() and get_sco_ndfd_data() functions before this
+    """
     
-    # save pop12 dimentions
-    temp_pop12_dims = temp_pop12.dimensions
-    temp_pop12_time_dim = temp_pop12_dims[0]
+    # ndfd_data.values # to see all possible variables
     
-    # save list of pop12 time dimentions
-    temp_pop12_time_np = numpy.array(temp_pop12[temp_pop12_time_dim][:])
-    # we want 24 hr (1-day), 48 hr (2-day), and 72 hr (3-day) data
-    
-    # create indeces for hrs of interest
-    hr12_index = int(numpy.where(temp_pop12_time_np == 12)[0][0]) # 0.5day forecast
-    hr24_index = int(numpy.where(temp_pop12_time_np == 24)[0][0]) # 1-day forecast
-    hr48_index = int(numpy.where(temp_pop12_time_np == 48)[0][0]) # 2-day forecast
-    hr72_index = int(numpy.where(temp_pop12_time_np == 72)[0][0]) # 3-day forecast
-    
-    # for four loop will need if statement for each if length is zero
-    # len(numpy.where(temp_pop12_time_np == 6)[0])
-    
-    # convert data to array (200 x 194)
-    temp_pop12_12hr_np = numpy.array(temp_pop12.data[0][hr12_index][0])
-    temp_pop12_24hr_np = numpy.array(temp_pop12.data[0][hr24_index][0])
-    temp_pop12_48hr_np = numpy.array(temp_pop12.data[0][hr48_index][0])
-    temp_pop12_72hr_np = numpy.array(temp_pop12.data[0][hr72_index][0])
-    
-    # convert data to dataframe (3 x 38800)
-    temp_pop12_12hr_pd_raw = pandas.DataFrame(temp_pop12_12hr_np).stack(dropna = False).reset_index()
-    temp_pop12_24hr_pd_raw = pandas.DataFrame(temp_pop12_24hr_np).stack(dropna = False).reset_index()
-    temp_pop12_48hr_pd_raw = pandas.DataFrame(temp_pop12_48hr_np).stack(dropna = False).reset_index()
-    temp_pop12_72hr_pd_raw = pandas.DataFrame(temp_pop12_72hr_np).stack(dropna = False).reset_index()
-    
-    # add valid period column
-    temp_pop12_12hr_pd_raw['valid_period_hrs'] = numpy.repeat("12", len(temp_pop12_12hr_pd_raw), axis=0)
-    temp_pop12_24hr_pd_raw['valid_period_hrs'] = numpy.repeat("24", len(temp_pop12_24hr_pd_raw), axis=0)
-    temp_pop12_48hr_pd_raw['valid_period_hrs'] = numpy.repeat("48", len(temp_pop12_48hr_pd_raw), axis=0)
-    temp_pop12_72hr_pd_raw['valid_period_hrs'] = numpy.repeat("72", len(temp_pop12_72hr_pd_raw), axis=0)
-    
-    # rename columns
-    temp_pop12_12hr_pd_rename = temp_pop12_12hr_pd_raw.rename(columns={"level_0": "y_index", "level_1": "x_index", 0: "pop12_value_perc"})
-    temp_pop12_24hr_pd_rename = temp_pop12_24hr_pd_raw.rename(columns={"level_0": "y_index", "level_1": "x_index", 0: "pop12_value_perc"})
-    temp_pop12_48hr_pd_rename = temp_pop12_48hr_pd_raw.rename(columns={"level_0": "y_index", "level_1": "x_index", 0: "pop12_value_perc"})
-    temp_pop12_72hr_pd_rename = temp_pop12_72hr_pd_raw.rename(columns={"level_0": "y_index", "level_1": "x_index", 0: "pop12_value_perc"})
-    
-    # create long and lat columns (12 hr)
-    # it's possible that long and lat are the same for all these times but am not 100% sure so repeating them
-    longitude_12hr = []
-    latitude_12hr = []
-    for row in range(0, 38800):
-        x_index_val = temp_pop12_12hr_pd_rename['x_index'][row]
-        y_index_val = temp_pop12_12hr_pd_rename['y_index'][row]
-        latitude_12hr.append(temp_x.data[x_index_val]) # x is latitude
-        longitude_12hr.append(temp_y.data[y_index_val]) # y is longitude
-    
-    # create long and lat columns (24 hr)
-    longitude_24hr = []
-    latitude_24hr = []
-    for row in range(0, 38800):
-        x_index_val = temp_pop12_24hr_pd_rename['x_index'][row]
-        y_index_val = temp_pop12_24hr_pd_rename['y_index'][row]
-        latitude_24hr.append(temp_x.data[x_index_val]) # x is latitude
-        longitude_24hr.append(temp_y.data[y_index_val]) # y is longitude
+    # save x and y data
+    x_data = ndfd_data['x'][:] # x coordinate
+    y_data = ndfd_data['y'][:] # y coordinate
+
+    # if requestig qpf data
+    if (ndfd_var == "qpf"):
+        # save variable data
+        var_data = ndfd_data['Total_precipitation_surface_6_Hour_Accumulation'] # qpf
+        #var_data.dimensions # to see dimensions of variable
         
-    # create long and lat columns (48 hr)
-    longitude_48hr = []
-    latitude_48hr = []
-    for row in range(0, 38800):
-        x_index_val = temp_pop12_24hr_pd_rename['x_index'][row]
-        y_index_val = temp_pop12_24hr_pd_rename['y_index'][row]
-        latitude_48hr.append(temp_x.data[x_index_val]) # x is latitude
-        longitude_48hr.append(temp_y.data[y_index_val]) # y is longitude
+        # save variable dimentions
+        var_data_dims = var_data.dimensions # get all dimentions
+        var_data_time_dim = var_data_dims[0] # get time dimention
         
-    # create long and lat columns (72 hr)
-    longitude_72hr = []
-    latitude_72hr = []
-    for row in range(0, 38800):
-        x_index_val = temp_pop12_24hr_pd_rename['x_index'][row]
-        y_index_val = temp_pop12_24hr_pd_rename['y_index'][row]
-        latitude_72hr.append(temp_x.data[x_index_val]) # x is latitude
-        longitude_72hr.append(temp_y.data[y_index_val]) # y is longitude
+        # save list of variable time dimentions
+        var_time_np = numpy.array(var_data[var_data_time_dim][:])
+        # we want 6 hr, 12 hr, 24 hr (1-day), 48 hr (2-day), and 72 hr (3-day) data
         
-    # add to data frame
-    temp_pop12_12hr_pd_rename['longitude'] = longitude_12hr
-    temp_pop12_12hr_pd_rename['latitude']  = latitude_12hr
+        # make list of desired times
+        #var_times_sel = [6, 12, 24, 48, 72]
+        
+        # loop through desired times and get indeces
+        #var_times_sel_index = []
+        #for time in var_times_sel:
+        #    var_times_sel_index.append(int(numpy.where(var_time_np == time)[0][0]))
+            
+        # create indeces for hrs of interest
+        hr06_index = int(numpy.where(var_time_np == 6)[0][0]) # 0.25day forecast
+        hr12_index = int(numpy.where(var_time_np == 12)[0][0]) # 0.5day forecast
+        hr24_index = int(numpy.where(var_time_np == 24)[0][0]) # 1-day forecast
+        hr48_index = int(numpy.where(var_time_np == 48)[0][0]) # 2-day forecast
+        hr72_index = int(numpy.where(var_time_np == 72)[0][0]) # 3-day forecast
+
+        # for four loop will need if statement for each if length is zero
+        # len(numpy.where(temp_pop12_time_np == 6)[0])
+        
+        # convert data to array (200 x 194)
+        var_06hr_np = numpy.array(var_data.data[0][hr06_index][0])
+        var_12hr_np = numpy.array(var_data.data[0][hr12_index][0])
+        var_24hr_np = numpy.array(var_data.data[0][hr24_index][0])
+        var_48hr_np = numpy.array(var_data.data[0][hr48_index][0])
+        var_72hr_np = numpy.array(var_data.data[0][hr72_index][0])
+        
+        # convert data to dataframe (3 x 38800)
+        var_06hr_pd_raw = pandas.DataFrame(var_06hr_np).stack(dropna = False).reset_index()
+        var_12hr_pd_raw = pandas.DataFrame(var_12hr_np).stack(dropna = False).reset_index()
+        var_24hr_pd_raw = pandas.DataFrame(var_24hr_np).stack(dropna = False).reset_index()
+        var_48hr_pd_raw = pandas.DataFrame(var_48hr_np).stack(dropna = False).reset_index()
+        var_72hr_pd_raw = pandas.DataFrame(var_72hr_np).stack(dropna = False).reset_index()
+        
+        # add valid period column
+        var_06hr_pd_raw['valid_period_hrs'] = numpy.repeat("6", len(var_06hr_pd_raw), axis=0)
+        var_12hr_pd_raw['valid_period_hrs'] = numpy.repeat("12", len(var_12hr_pd_raw), axis=0)
+        var_24hr_pd_raw['valid_period_hrs'] = numpy.repeat("24", len(var_24hr_pd_raw), axis=0)
+        var_48hr_pd_raw['valid_period_hrs'] = numpy.repeat("48", len(var_48hr_pd_raw), axis=0)
+        var_72hr_pd_raw['valid_period_hrs'] = numpy.repeat("72", len(var_72hr_pd_raw), axis=0)
+        
+        # merge rows of data frames
+        var_data_pd_raw = var_06hr_pd_raw.append([var_12hr_pd_raw, var_24hr_pd_raw, var_48hr_pd_raw, var_72hr_pd_raw]).reset_index()
+
+        # rename columns
+        var_data_pd = var_data_pd_raw.rename(columns={"level_0": "y_index", "level_1": "x_index", 0: "qpf_value_kmperm2"})
+        
+        
+    # if requesting pop12 data    
+    elif (ndfd_var == "pop12"):
+        # save variable data
+        var_data = ndfd_data['Total_precipitation_surface_12_Hour_Accumulation_probability_above_0p254'] # pop12
+        
+        # save variable dimentions
+        var_data_dims = var_data.dimensions # get all dimentions
+        var_data_time_dim = var_data_dims[0] # get time dimention
+        
+        # save list of variable time dimentions
+        var_time_np = numpy.array(var_data[var_data_time_dim][:])
+        # we want 12 hr, 24 hr (1-day), 48 hr (2-day), and 72 hr (3-day) data
+        
+        # make list of desired times
+        #var_times_sel = [12, 24, 48, 72]
+        
+        # loop through desired times and get indeces
+        #var_times_sel_index = []
+        #for time in var_times_sel:
+        #    var_times_sel_index.append(int(numpy.where(var_time_np == time)[0][0]))
+            
+        # create indeces for hrs of interest
+        hr12_index = int(numpy.where(var_time_np == 12)[0][0]) # 0.5day forecast
+        hr24_index = int(numpy.where(var_time_np == 24)[0][0]) # 1-day forecast
+        hr48_index = int(numpy.where(var_time_np == 48)[0][0]) # 2-day forecast
+        hr72_index = int(numpy.where(var_time_np == 72)[0][0]) # 3-day forecast
+
+        # for four loop will need if statement for each if length is zero
+        # len(numpy.where(temp_pop12_time_np == 12)[0])
+        
+        # convert data to array (200 x 194)
+        var_12hr_np = numpy.array(var_data.data[0][hr12_index][0])
+        var_24hr_np = numpy.array(var_data.data[0][hr24_index][0])
+        var_48hr_np = numpy.array(var_data.data[0][hr48_index][0])
+        var_72hr_np = numpy.array(var_data.data[0][hr72_index][0])
+        
+        # convert data to dataframe (3 x 38800)
+        var_12hr_pd_raw = pandas.DataFrame(var_12hr_np).stack(dropna = False).reset_index()
+        var_24hr_pd_raw = pandas.DataFrame(var_24hr_np).stack(dropna = False).reset_index()
+        var_48hr_pd_raw = pandas.DataFrame(var_48hr_np).stack(dropna = False).reset_index()
+        var_72hr_pd_raw = pandas.DataFrame(var_72hr_np).stack(dropna = False).reset_index()
+        
+        # add valid period column
+        var_12hr_pd_raw['valid_period_hrs'] = numpy.repeat("12", len(var_12hr_pd_raw), axis=0)
+        var_24hr_pd_raw['valid_period_hrs'] = numpy.repeat("24", len(var_24hr_pd_raw), axis=0)
+        var_48hr_pd_raw['valid_period_hrs'] = numpy.repeat("48", len(var_48hr_pd_raw), axis=0)
+        var_72hr_pd_raw['valid_period_hrs'] = numpy.repeat("72", len(var_72hr_pd_raw), axis=0)
+        
+        # merge rows of data frames
+        var_data_pd_raw = var_12hr_pd_raw.append([var_24hr_pd_raw, var_48hr_pd_raw, var_72hr_pd_raw]).reset_index()
+
+        # make final pd dataframe with renamed columns
+        var_data_pd = var_data_pd_raw.rename(columns={"level_0": "y_index", "level_1": "x_index", 0: "pop12_value_perc"})
+        
+        
+    # if requesting neither qpf or pop12 data
+    elif(ndfd_var != "qpf" or  ndfd_var != "pop12"):
+        
+        return print("Not a valid ndfd_var option.")
+ 
     
-    temp_pop12_24hr_pd_rename['longitude'] = longitude_24hr
-    temp_pop12_24hr_pd_rename['latitude']  = latitude_24hr
-    
-    temp_pop12_48hr_pd_rename['longitude'] = longitude_48hr
-    temp_pop12_48hr_pd_rename['latitude']  = latitude_48hr
-    
-    temp_pop12_72hr_pd_rename['longitude'] = longitude_72hr
-    temp_pop12_72hr_pd_rename['latitude']  = latitude_72hr
+    # create latitude and longitude columns
+    longitude = []
+    latitude = []
+    for row in range(0, var_data_pd.shape[0]):
+        x_index_val = var_data_pd['x_index'][row]
+        y_index_val = var_data_pd['y_index'][row]
+        longitude.append(x_data.data[x_index_val]) # x is longitude
+        latitude.append(y_data.data[y_index_val]) # y is latitude
+        
+    # add longitude and latitude to data frame
+    var_data_pd['longitude'] = longitude
+    var_data_pd['latitude']  = latitude
     
     # create and wrangle time columns
     # server time is in UCT but changing it to something that's local for NC (use NYC timezone)
-    temp_pop12_12hr_pd_rename['time'] = pandas.to_datetime(numpy.repeat(temp_datetime_uct_str, len(temp_pop12_12hr_pd_rename), axis=0), format = "%Y-%m-%d %H:%M")
-    temp_pop12_12hr_pd_rename['time_uct_long'] = temp_pop12_12hr_pd_rename.time.dt.tz_localize(tz = 'UCT')
-    temp_pop12_12hr_pd_rename['time_uct'] = temp_pop12_12hr_pd_rename.time_uct_long.dt.strftime("%Y-%m-%d %H:%M")
-    temp_pop12_12hr_pd_rename['time_nyc_long'] = temp_pop12_12hr_pd_rename.time_uct_long.dt.tz_convert(tz = 'America/New_York')
-    temp_pop12_12hr_pd_rename['time_nyc'] = temp_pop12_12hr_pd_rename.time_nyc_long.dt.strftime("%Y-%m-%d %H:%M")
+    var_data_pd['time'] = pandas.to_datetime(numpy.repeat(datetime_uct_str, len(var_data_pd), axis=0), format = "%Y-%m-%d %H:%M")
+    var_data_pd['time_uct_long'] = var_data_pd.time.dt.tz_localize(tz = 'UCT')
+    var_data_pd['time_uct'] = var_data_pd.time_uct_long.dt.strftime("%Y-%m-%d %H:%M")
+    var_data_pd['time_nyc_long'] = var_data_pd.time_uct_long.dt.tz_convert(tz = 'America/New_York')
+    var_data_pd['time_nyc'] = var_data_pd.time_nyc_long.dt.strftime("%Y-%m-%d %H:%M") 
+ 
+    # convert datetime str so can append to file name
+    datetime_ym, datetime_ymd_str, datetime_ymdh_str = convert_sco_ndfd_datetime_str(datetime_uct_str)
     
-    temp_pop12_24hr_pd_rename['time'] = pandas.to_datetime(numpy.repeat(temp_datetime_uct_str, len(temp_pop12_24hr_pd_rename), axis=0), format = "%Y-%m-%d %H:%M")
-    temp_pop12_24hr_pd_rename['time_uct_long'] = temp_pop12_24hr_pd_rename.time.dt.tz_localize(tz = 'UCT')
-    temp_pop12_24hr_pd_rename['time_uct'] = temp_pop12_24hr_pd_rename.time_uct_long.dt.strftime("%Y-%m-%d %H:%M")
-    temp_pop12_24hr_pd_rename['time_nyc_long'] = temp_pop12_24hr_pd_rename.time_uct_long.dt.tz_convert(tz = 'America/New_York')
-    temp_pop12_24hr_pd_rename['time_nyc'] = temp_pop12_24hr_pd_rename.time_nyc_long.dt.strftime("%Y-%m-%d %H:%M")
+    print("tidied " + ndfd_var + " data on " + datetime_ymdh_str)
     
-    temp_pop12_48hr_pd_rename['time'] = pandas.to_datetime(numpy.repeat(temp_datetime_uct_str, len(temp_pop12_48hr_pd_rename), axis=0), format = "%Y-%m-%d %H:%M")
-    temp_pop12_48hr_pd_rename['time_uct_long'] = temp_pop12_48hr_pd_rename.time.dt.tz_localize(tz = 'UCT')
-    temp_pop12_48hr_pd_rename['time_uct'] = temp_pop12_48hr_pd_rename.time_uct_long.dt.strftime("%Y-%m-%d %H:%M")
-    temp_pop12_48hr_pd_rename['time_nyc_long'] = temp_pop12_48hr_pd_rename.time_uct_long.dt.tz_convert(tz = 'America/New_York')
-    temp_pop12_48hr_pd_rename['time_nyc'] = temp_pop12_48hr_pd_rename.time_nyc_long.dt.strftime("%Y-%m-%d %H:%M")
-    
-    temp_pop12_72hr_pd_rename['time'] = pandas.to_datetime(numpy.repeat(temp_datetime_uct_str, len(temp_pop12_72hr_pd_rename), axis=0), format = "%Y-%m-%d %H:%M")
-    temp_pop12_72hr_pd_rename['time_uct_long'] = temp_pop12_72hr_pd_rename.time.dt.tz_localize(tz = 'UCT')
-    temp_pop12_72hr_pd_rename['time_uct'] = temp_pop12_72hr_pd_rename.time_uct_long.dt.strftime("%Y-%m-%d %H:%M")
-    temp_pop12_72hr_pd_rename['time_nyc_long'] = temp_pop12_72hr_pd_rename.time_uct_long.dt.tz_convert(tz = 'America/New_York')
-    temp_pop12_72hr_pd_rename['time_nyc'] = temp_pop12_72hr_pd_rename.time_nyc_long.dt.strftime("%Y-%m-%d %H:%M")
-    
-    # bind rows
-    temp_pop12_data_pd = temp_pop12_12hr_pd_rename.append([temp_pop12_24hr_pd_rename, temp_pop12_48hr_pd_rename, temp_pop12_72hr_pd_rename])
-    
-    return temp_pop12_data_pd, temp_year_month_day_hour
-    
-# %% Test Function
-    
-# test_data, test_data_time_str = get_sco_ndfd_pop12_data(base_server_url = ndfd_sco_server_url, temp_datetime_uct_str = "2016-01-01 00:00")
+    return var_data_pd, datetime_ymdh_str
 
-# %% Generate DateTime List for Looping
+# %% test functions
+    
+# datetime
+test_datetime_uct_str = "2016-01-01 00:00"
+
+# test function
+test_ym_str, test_ymd_str, test_ymdh_str = convert_sco_ndfd_datetime_str(datetime_str = test_datetime_uct_str)
+    
+# define serve path
+ndfd_sco_server_url = 'https://tds.climate.ncsu.edu/thredds/dodsC/nws/ndfd/'
+# this is the server path for historic ndfd forecasts
+# to see the catalog website: https://tds.climate.ncsu.edu/thredds/catalog/nws/ndfd/catalog.html
+
+# datetime
+test_datetime_uct_str = "2016-01-01 00:00"
+
+# get data
+test_data = get_sco_ndfd_data(base_server_url = ndfd_sco_server_url, datetime_uct_str = test_datetime_uct_str)
+
+# tidy qpf data
+test_qpf_data_pd, test_qpf_datetime_ymdh_str = tidy_sco_ndfd_data(ndfd_data = test_data, datetime_uct_str = test_datetime_uct_str, ndfd_var = "qpf")
+
+# tidy pop12 data
+test_pop12_data_pd, test_pop12_datetime_ymdh_str = tidy_sco_ndfd_data(ndfd_data = test_data, datetime_uct_str = test_datetime_uct_str, ndfd_var = "pop12")
+
+# test non-valid ndfd_var option
+#tidy_sco_ndfd_data(ndfd_data = test_data, datetime_uct_str = test_datetime_uct_str, ndfd_var = "qff")
+
+# %% generate datetime dataset for looping
 
 # define start datetime
 start_datetime_str = "2016-01-01 00:00"
@@ -202,7 +289,7 @@ start_datetime_str = "2016-01-01 00:00"
 datetime_list = [start_datetime_str]
 
 # define length of list (number of days for however many years)
-num_years = 2
+num_years = 3
 num_days_per_year = 365
 
 # loop to fill in datetime_list
@@ -213,25 +300,39 @@ for i in range(1, (num_days_per_year * num_years + 1)):
     datetime_list.append(next_step_str)
 
 # convert datetime_list to a pandas dataframe
-datetime_list_pd = pandas.DataFrame(datetime_list, columns = {'datatime_str_uct'})
+datetime_list_pd = pandas.DataFrame(datetime_list, columns = {'datatime_uct_str'})
 
-# %% Loop 
+# %% loop 
 
-for i in range(0, 5): #len(datetime_list_pd)):
+# define serve path
+ndfd_sco_server_url = 'https://tds.climate.ncsu.edu/thredds/dodsC/nws/ndfd/'
+# this is the server path for historic ndfd forecasts
+# to see the catalog website: https://tds.climate.ncsu.edu/thredds/catalog/nws/ndfd/catalog.html
+
+for date in range(0, 5): #len(datetime_list_pd)):
     
     # grab datetime
-    datetime_uct_str = datetime_list_pd['datatime_str_uct'][i]
+    temp_datetime_uct_str = datetime_list_pd['datatime_uct_str'][date]
     
-    # grab data and wrangle
-    temp_data_pd, temp_date_time_str = get_sco_ndfd_pop12_data(base_server_url = ndfd_sco_server_url, temp_datetime_uct_str = datetime_uct_str)
+    # get data
+    temp_data = get_sco_ndfd_data(base_server_url = ndfd_sco_server_url, datetime_uct_str = temp_datetime_uct_str)
     
-    # define data export path
-    temp_data_path = data_dir + "pop12" + "_" + temp_date_time_str + ".csv"
+    # might be a good idea to add some sort of bug checking/ifelse step here (i.e., if temp_data does not exist)
+
+    # tidy qpf and pop12 data
+    temp_qpf_data_pd, temp_qpf_datetime_ymdh_str = tidy_sco_ndfd_data(ndfd_data = temp_data, datetime_uct_str = temp_datetime_uct_str, ndfd_var = "qpf")
+    temp_pop12_data_pd, temp_pop12_datetime_ymdh_str = tidy_sco_ndfd_data(ndfd_data = temp_data, datetime_uct_str = temp_datetime_uct_str, ndfd_var = "pop12")
+
+    # define qpf and pop12 data export paths
+    temp_qpf_data_path = data_dir + "qpf" + "_" + temp_qpf_datetime_ymdh_str + ".csv" # data_dir definited at top of script
+    temp_pop12_data_path = data_dir + "pop12" + "_" + temp_pop12_datetime_ymdh_str + ".csv" # data_dir definited at top of script
     
-    # export data
-    temp_data_pd.to_csv(temp_data_path, index = False)
+    # export qpf and pop12 data
+    temp_qpf_data_pd.to_csv(temp_qpf_data_path, index = False)
+    temp_pop12_data_pd.to_csv(temp_pop12_data_path, index = False)
     
     # print status
-    print("completed ", temp_date_time_str, " download")
+    print("downloaded " + temp_datetime_uct_str + " data to local machine")
     
 # it works! :)
+# can do about 1-2 days per min so for all 1095 days would take about 18.25 hours
