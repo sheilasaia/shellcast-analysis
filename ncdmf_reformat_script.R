@@ -1,5 +1,10 @@
 # ncdmf reformatting spatial data script
 
+# ---- to do list ----
+
+# TODO check out what's going on with 2 digit growing area numbers
+# 
+
 # ---- 1. load libraries and set paths----
 # load libraries
 library(tidyverse)
@@ -8,6 +13,9 @@ library(sf)
 # set paths
 spatial_data_path <- "/Users/sheila/Documents/bae_shellcast_project/shellcast_analysis/data/spatial/ncdmf_raw/"
 
+# export path
+spatial_data_export_path <- "/Users/sheila/Documents/bae_shellcast_project/shellcast_analysis/data/spatial/ncdmf_raw/sheila_generated/"
+
 
 # ---- 2. load data ----
 
@@ -15,8 +23,9 @@ spatial_data_path <- "/Users/sheila/Documents/bae_shellcast_project/shellcast_an
 ga_data_raw <- st_read(paste0(spatial_data_path, "SGA_Current_Classifications/SGA_Current_Classifications.shp"))
 
 # columns
+# OBJECTID_1, OBJECTID_2, OBJECTID, OBJECTID_3, SGA_INDEX - not really sure what these are but think these are all artifacts from ArcGIS
 # REGION = region of coast (central, north, south) 
-# GROW_AREA = growing area (GA) code is a two digits code (e.g., letter + number like A1)
+# GROW_AREA = growing area (GA) code is a two digits code (e.g., letter + number like A1), first digit (letter) is HA_AREA, second digist (number) is HA_SUBAREA
 # DSHA_NAME = full written out name for location (e.g., Calabash Area)
 # DSHA_ID = like GA code but has dash between digits (e.g., A-1)
 # DSHA_AREA = first digit of GA (e.g., letter like A)
@@ -40,16 +49,71 @@ ga_data_raw <- st_read(paste0(spatial_data_path, "SGA_Current_Classifications/SG
 # SURFACE = canal, land, water, mhw (?)
 # RELAY = ? (NA, N/A, YES, LAND, NO)
 # CREATOR = who created the area/data
-# CREATED = date of creation of the area/data
-# UPDATED = date the area/data was updated
+# CREATED = date of creation of the area/data?
+# UPDATED = date the area/data was updated?
 # ACRES = area of grow area in acres
 # SQ_MILES = area of grow area in sqare miles
+# SHAPE_Leng = ?
+# Shape_Le_1 = ?
+# GlobalID = ?
+# SHAPE_Le_2 =? 
+# GlobalID_2 = ?
+# Shape__Are = ?
+# Shape__Len = ?
+# GlobalID_3 = ?
+# Shape__A_1 = ?
+# Shape__L_1 = ?
+
+# other observations
+# 1. as far as I can tell DSHA_CODE, HA_NAMEID, HA_AREA, HA_SUBAREA all have similar info to GROW_AREA
+# 2. HA_LABEL,DSHA_LABEL, and MAP_ID have a lot of NA values (not filled in values) so might not be very helpful
+# 3. HA_CODE has a third digit (i.e., letters) that GROW_AREA does not have - will need this
+# 4. DSHA_NAME and HA_NAME are similar but looks like HA_NAME has more detail (going along with HA_NAMEID and HA_CODE)
+# 5. some of the MAP_NAME and MAP_NUMBER columns are NA values
+# 6. what's the details with the UPDATED column?
+# 
+
+# check lengths
+length(ga_data_raw$OBJECTID_1)
+length(unique(ga_data_raw$OBJECTID_1))
+# all are unique, lengths are equal
+
+length(ga_data_raw$OBJECTID_2)
+length(unique(ga_data_raw$OBJECTID_2))
+# all are not unique, some repetition
+
+length(ga_data_raw$OBJECTID_3)
+length(unique(ga_data_raw$OBJECTID_3))
+# all are not unique, some repetion (more than ID_2)
+
+length(ga_data_raw$OBJECTID)
+length(unique(ga_data_raw$OBJECTID))
+# all are not unique, some repetion (more than ID_1, less than ID_2)
 
 
 # ---- 3. checking variables ----
 
 # drop geometry for now
 ga_data_raw_att <- st_drop_geometry(ga_data_raw)
+
+# unique grow area list
+ga_unique_list <- unique(ga_data_raw$GROW_AREA)
+length(ga_unique_list) # 74 unique values
+
+# count number of each
+ga_obs_count <- ga_data_raw_att %>%
+  group_by(GROW_AREA) %>%
+  count()
+# there are 2448 NA rows...
+# ranges from D3 with 508 observations to H3 with 3
+
+# select D3 and export so can look at shape file for one GA
+ga_sel_d3_data_raw <- ga_data_raw %>%
+  filter(GROW_AREA == "D3")
+st_write(ga_sel_d3_data_raw, paste0(spatial_data_export_path, "ga_sel_d3_data_raw.shp"))
+
+
+
 
 # check ga, ha, dsha, and map codes
 dsha_code <- ga_data_raw_att$DSHA_CODE
@@ -71,25 +135,46 @@ compare_codes <- data.frame(row_id = seq(1:dim(ga_data_raw_att)[1]),
   separate(ha_nameid_fix, c("ha_nameid_ga", "ha_nameid_letter", "ha_nameid_unknown"), sep = ",", remove = FALSE) %>%
   separate(map_code_fix, c("map_code_num", "map_code_unknown"), sep = ",", remove = FALSE)
 
-# notes
-# 1. HA_CODE doesn't match with HA_CLASS, HA_CLASSID, HA_NAMEID, HA_STATUS (don't use HA_CODE)
-# 2. DSHA_CODE and GROW_AREA seem to be the same
-# 3. cosider that some data are repeated b/c row is added when data is updated (closed becomes open?)
-# 4. Use GROW_AREA to get area (lette) and subarea (number)
-
 
 # ---- 3. reformatting data ----
 
 # check crs
-st_crs(ga_class_data_raw)
+st_crs(ga_data_raw)
 # wgs84
 
 # project and clean-up
-ga_data <- ga_class_data_raw %>%
+ga_data <- ga_data_raw %>%
   st_transform(crs = 102008) %>% # Albers Equal Area Conic projection
-  select(GROW_AREA, REGION, DSHA_NAME, DSHA_CODE, HA_CLASS, HA_CLASSID, HA_NAME, HA_NAMEID, HA_STATUS, HA_AREA, HA_SUBAREA, HA_CODE, MAP_NAME, MAP_NUMBER, MAP_ID, COUNTY, JURISDCTN, WATER_DES, SURFACE, ACRES, SQ_MILES)
+  #mutate(grow_area = ) %>%
+  select(ha_area = HA_AREA,
+         ha_subarea = HA_SUBAREA,
+         ha_code = HA_CODE,
+         dsha_desc = DSHA_NAME,
+         ha_desc = HA_NAME,
+         ha_class_long = HA_CLASS,
+         ha_class_short = HA_CLASSID,
+         ha_status = HA_STATUS,
+         map_desc = MAP_NAME,
+         map_number = MAP_NUMBER,
+         region = REGION,
+         ga_acres = ACRES,
+         ga_sqmi = SQ_MILES,
+         ga_county = COUNTY,
+         ga_jurisdiction = JURISDCTN,
+         ga_water_desc = WATER_DES,
+         ga_surf_desc = SURFACE,
+         relay = RELAY,
+         creator = CREATOR,
+         date_created = CREATED,
+         date_updated = UPDATED) %>%
+  mutate(ga_third_digit = )
 st_crs(ga_data)
 names(ga_data)
+
+
+
+
+
 
 dsha_code <- as.character(ga_data$DSHA_CODE)
 ga_code <- str_to_lower(ga_data$GROW_AREA)
