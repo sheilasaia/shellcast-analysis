@@ -10,7 +10,6 @@ Created By: Sheila (ssaia@ncsu.edu)
 
 # %% to do list
 
-# TODO figure out lat/long vs x/y issues
 # TODO is there a more efficient way to loop through the different hours of data? (in the tidy data function)
 
 
