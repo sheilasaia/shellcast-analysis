@@ -71,7 +71,8 @@ ga_data_raw <- st_read(paste0(spatial_data_path, "SGA_Current_Classifications/SG
 # 4. DSHA_NAME and HA_NAME are similar but looks like HA_NAME has more detail (going along with HA_NAMEID and HA_CODE)
 # 5. some of the MAP_NAME and MAP_NUMBER columns are NA values
 # 6. what's the details with the UPDATED column?
-# 
+# 7. sometimes HA_AREA and HA_SUBAREA are not given even though GROW_AREA is
+# 8. HA_AREA and HA_SUBAREA are never given if GROW_AREA is not given - basically they're not too helpful
 
 # check lengths
 length(ga_data_raw$OBJECTID_1)
@@ -142,12 +143,10 @@ compare_codes <- data.frame(row_id = seq(1:dim(ga_data_raw_att)[1]),
 st_crs(ga_data_raw)
 # wgs84
 
-# project and clean-up
-ga_data <- ga_data_raw %>%
+# project and rename
+ga_data_albers <- ga_data_raw %>%
   st_transform(crs = 102008) %>% # Albers Equal Area Conic projection
-  #mutate(grow_area = ) %>%
-  select(ha_area = HA_AREA,
-         ha_subarea = HA_SUBAREA,
+  select(grow_area = GROW_AREA,
          ha_code = HA_CODE,
          dsha_desc = DSHA_NAME,
          ha_desc = HA_NAME,
@@ -166,10 +165,36 @@ ga_data <- ga_data_raw %>%
          relay = RELAY,
          creator = CREATOR,
          date_created = CREATED,
-         date_updated = UPDATED) %>%
-  mutate(ga_third_digit = )
-st_crs(ga_data)
-names(ga_data)
+         date_updated = UPDATED)
+
+# check
+st_crs(ga_data_albers)
+names(ga_data_albers)
+
+# remove data with na growing areas
+ga_data <- ga_data_albers %>%
+  filter(is.na(grow_area) == FALSE) %>%
+  mutate(grow_area_trim = str_trim(grow_area, side = "both"),
+         grow_area_str_len = str_count(grow_area_trim),
+         ha_area_fix = str_to_upper(str_sub(grow_area_trim, start = 1, end = 1)), # original HA_AREA has some NAs so generate from scratch
+         ha_subarea_fix = str_pad(str_sub(grow_area_trim, start = 2, end = -1), 2, side = "left", "0"), # original HA_SUBAREA has some NAs so generate from scratch
+         ha_code_fix = if_else(is.na(str_trim(ha_code)) == TRUE, grow_area_trim, str_trim(ha_code)), # some of the ha_code values are missing despite grow_area being defined
+         grow_area_short = paste0(ha_area_fix, ha_subarea_fix), # want to make all 3 digits so bind with padded subarea
+         ha_subsubarea_fix = str_to_upper(str_sub(ha_code_fix, start = grow_area_str_len + 1, end = str_count(ha_code_fix))),
+         ha_subsubarea_str_len = str_count(ha_subsubarea_fix))
+
+test_1 <- ga_data %>%
+  filter(ha_subsubarea_str_len == 1) # 2467 are equal to 1 digit, 2287 are 4 or 5 digits
+
+test_2 <- ga_data %>%
+  filter(ha_subsubarea_str_len > 3) # 2467 are equal to 1 digit, 2287 are 4 or 5 digits
+
+ # keep a copy of data without growing area specified
+ga_data_nas <- ga_data_albers %>%
+  filter(is.na(grow_area) == TRUE)
+  
+
+
 
 
 
