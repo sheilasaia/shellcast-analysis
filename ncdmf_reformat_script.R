@@ -1,9 +1,27 @@
-# ncdmf reformatting spatial data script
 
-# ---- to do list ----
+# script name: ncdmf_reformat_script.R
+# purpose of script: wrangling nc dmf spatial data
+# author: sheila saia
+# date created: 20200315
+# email: ssaia@ncsu.edu
 
+
+# ----
+# notes:
+ 
+
+# ----
+# to do list
 # TODO check out what's going on with 2 digit growing area numbers
-# 
+# TODO make a look-up table for which GAs are in which CMUs
+# TODO fix region coding so South and SOUTH are the same
+# TODO fix conditional approved labels (don't care if they're currently open or not)
+# TODO what's the deal with MAP_NAME vs MAP_NUMBER?
+# TODO is letter from MAP_ID the same as the letter in HA_CODE?
+# TODO what is RELAY? and fix NA vs N/A
+# TODO fix line 2971 HA_NAMEID is "D 4" but should be "D-4"
+# TODO fix line 4225 HA_AREA is "I-4 j" but should be "I-4"
+
 
 # ---- 1. load libraries and set paths----
 # load libraries
@@ -14,13 +32,13 @@ library(sf)
 spatial_data_path <- "/Users/sheila/Documents/bae_shellcast_project/shellcast_analysis/data/spatial/ncdmf_raw/"
 
 # export path
-spatial_data_export_path <- "/Users/sheila/Documents/bae_shellcast_project/shellcast_analysis/data/spatial/ncdmf_raw/sheila_generated/"
+spatial_data_export_path <- "/Users/sheila/Documents/bae_shellcast_project/shellcast_analysis/data/spatial/sheila_generated/"
 
 
 # ---- 2. load data ----
 
 # growing area (GA) data
-ga_data_raw <- st_read(paste0(spatial_data_path, "SGA_Current_Classifications/SGA_Current_Classifications.shp"))
+ga_data_raw <- st_read(paste0(spatial_data_path, "SGA_Current_Classifications_may2019/SGA_Current_Classifications.shp"))
 
 # columns
 # OBJECTID_1, OBJECTID_2, OBJECTID, OBJECTID_3, SGA_INDEX - not really sure what these are but think these are all artifacts from ArcGIS
@@ -114,8 +132,6 @@ ga_sel_d3_data_raw <- ga_data_raw %>%
 st_write(ga_sel_d3_data_raw, paste0(spatial_data_export_path, "ga_sel_d3_data_raw.shp"))
 
 
-
-
 # check ga, ha, dsha, and map codes
 dsha_code <- ga_data_raw_att$DSHA_CODE
 ga_code <- ga_data_raw_att$GROW_AREA
@@ -183,6 +199,21 @@ ga_data <- ga_data_albers %>%
          ha_subsubarea_fix = str_to_upper(str_sub(ha_code_fix, start = grow_area_str_len + 1, end = str_count(ha_code_fix))),
          ha_subsubarea_str_len = str_count(ha_subsubarea_fix))
 
+# select A3 and export so can look at shape file for one GA
+library(lwgeom)
+ga_a3_data <- ga_data %>%
+  filter(grow_area_trim == "A3") %>%
+  st_make_valid()
+st_write(ga_a3_data, paste0(spatial_data_export_path, "ga_a3_data.shp"))
+
+# try union
+ga_a3_data$area <- st_area(ga_a3_data)
+
+ga_a3_data_union <- ga_a3_data %>%
+  group_by(ha_subsubarea_fix) %>%
+  summarize(area_sum = sum(area))
+st_write(ga_a3_data_union, paste0(spatial_data_export_path, "ga_a3_data_union.shp"))
+
 test_1 <- ga_data %>%
   filter(ha_subsubarea_str_len == 1) # 2467 are equal to 1 digit, 2287 are 4 or 5 digits
 
@@ -213,17 +244,6 @@ compare_df <- data.frame(row_id = seq(1:dim(ga_data)[1]),
 
 ga_list <- unique(ga_data$GROW_AREA) # 73 unique GAs
 ha_list <- unique(ga_data$HA_CODE) # 499 unique HAs
-
-
-# ---- TO DO LIST ----
-# TODO make a look-up table for which GAs are in which CMUs
-# TODO fix region coding so South and SOUTH are the same
-# TODO fix conditional approved labels (don't care if they're currently open or not)
-# TODO what's the deal with MAP_NAME vs MAP_NUMBER?
-# TODO is letter from MAP_ID the same as the letter in HA_CODE?
-# TODO what is RELAY? and fix NA vs N/A
-# TODO fix line 2971 HA_NAMEID is "D 4" but should be "D-4"
-# TODO fix line 4225 HA_AREA is "I-4 j" but should be "I-4"
 
 
 
