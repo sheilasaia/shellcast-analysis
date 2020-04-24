@@ -195,8 +195,8 @@ def tidy_sco_ndfd_data(ndfd_data, datetime_uct_str, ndfd_var):
                     latitude.append(y_data.data[y_index_val]) # y is latitude
                     
                 # add longitude and latitude to data frame
-                var_data_pd['longitude'] = longitude
-                var_data_pd['latitude']  = latitude
+                var_data_pd['longitude_km'] = longitude
+                var_data_pd['latitude_km']  = latitude
                 
                 # create and wrangle time columns
                 # server time is in UCT but changing it to something that's local for NC (use NYC timezone)
@@ -287,9 +287,8 @@ def tidy_sco_ndfd_data(ndfd_data, datetime_uct_str, ndfd_var):
                     latitude.append(y_data.data[y_index_val]) # y is latitude
                     
                 # add longitude and latitude to data frame
-                var_data_pd['longitude'] = longitude
-                var_data_pd['latitude']  = latitude
-                
+                var_data_pd['longitude_km'] = longitude
+                var_data_pd['latitude_km']  = latitude
                 # create and wrangle time columns
                 # server time is in UCT but changing it to something that's local for NC (use NYC timezone)
                 var_data_pd['time'] = pandas.to_datetime(numpy.repeat(datetime_uct_str, len(var_data_pd), axis=0), format = "%Y-%m-%d %H:%M")
@@ -386,14 +385,17 @@ ndfd_sco_server_url = 'https://tds.climate.ncsu.edu/thredds/dodsC/nws/ndfd/'
 
 # empty pandas dataframes
 pop12_data_pd = pandas.DataFrame(columns = ['index', 'y_index', 'x_index', 'pop12_value_perc', 'valid_period_hrs',
-       'longitude', 'latitude', 'time', 'time_uct_long', 'time_uct',
+       'longitude_km', 'latitude_km', 'time', 'time_uct_long', 'time_uct',
        'time_nyc_long', 'time_nyc'])
 qpf_data_pd = pandas.DataFrame(columns = ['index', 'y_index', 'x_index', 'qpf_value_kmperm2', 'valid_period_hrs',
-       'longitude', 'latitude', 'time', 'time_uct_long', 'time_uct',
+       'longitude_km', 'latitude_km', 'time', 'time_uct_long', 'time_uct',
        'time_nyc_long', 'time_nyc'])
+    
+# keep track of available dates
+data_available_pd = pandas.DataFrame(columns = ['datetime_uct_str', 'status'])
 
 # loop!
-for date in range(18, 22): #len(datetime_list_pd)): #range(0, len(datetime_list_pd)):
+for date in range(0, 2): #range(0, len(datetime_list_pd)):
     # grab datetime
     temp_datetime_uct_str = datetime_list_pd['datetime_uct_str'][date]
 
@@ -409,28 +411,54 @@ for date in range(18, 22): #len(datetime_list_pd)): #range(0, len(datetime_list_
         # check if desired times were available, only keep when we have both
         if ((len(temp_qpf_data_pd) > 0) and (len(temp_pop12_data_pd) > 0)):
             # append data to final dataframe
-            qpf_data_pd = qpf_data_pd.append(temp_qpf_data_pd, ignore_index = True)
-            pop12_data_pd = pop12_data_pd.append(temp_pop12_data_pd, ignore_index = True)
+            # qpf_data_pd = qpf_data_pd.append(temp_qpf_data_pd, ignore_index = True)
+            # pop12_data_pd = pop12_data_pd.append(temp_pop12_data_pd, ignore_index = True)
+            
+            # define export path
+            temp_datetime_ymdh_str = convert_sco_ndfd_datetime_str(temp_datetime_uct_str)[2]
+            temp_qpf_data_path = data_dir + "qpf_" + temp_datetime_ymdh_str +  ".csv" # data_dir definited at top of script
+            temp_pop12_data_path = data_dir + "pop12_" + temp_datetime_ymdh_str + ".csv" # data_dir definited at top of script
+            
+            # export results
+            temp_qpf_data_pd.to_csv(temp_qpf_data_path, index = False)
+            temp_pop12_data_pd.to_csv(temp_pop12_data_path, index = False)
+            
+            # keep track of available data
+            temp_data_available_pd = pandas.DataFrame({'datetime_uct_str':[temp_datetime_uct_str], 'status':["available"]})
+            data_available_pd = data_available_pd.append(temp_data_available_pd, ignore_index = True)
             
             # print status
-            print("appended " + temp_datetime_uct_str + " data")
+            # print("appended " + temp_datetime_uct_str + " data")
+            print("exported " + temp_datetime_uct_str + " data")
             
         else: 
+            # keep track of available data
+            temp_data_available_pd = pandas.DataFrame({'datetime_uct_str':[temp_datetime_uct_str], 'status':["not_available"]})
+            data_available_pd = data_available_pd.append(temp_data_available_pd, ignore_index = True)
+            
             # print status
             print("did not append " + temp_datetime_uct_str + " data")
 
     else:
+        # keep track of available data
+        temp_data_available_pd = pandas.DataFrame({'datetime_uct_str':[temp_datetime_uct_str], 'status':["not_available"]})
+        data_available_pd = data_available_pd.append(temp_data_available_pd, ignore_index = True)
+        
         # print status
         print("did not append " + temp_datetime_uct_str + " data")
 
 # %%
 # define qpf and pop12 data export paths
-qpf_data_path = data_dir + "qpf" + "_.csv" # data_dir definited at top of script
-pop12_data_path = data_dir + "pop12" + "_data.csv" # data_dir definited at top of script
+# qpf_data_path = data_dir + "qpf" + "_.csv" # data_dir definited at top of script
+# pop12_data_path = data_dir + "pop12" + "_data.csv" # data_dir definited at top of script
 
 # export qpf and pop12 data
-qpf_data_pd.to_csv(qpf_data_path, index = False)
-pop12_data_pd.to_csv(pop12_data_path, index = False)
+# qpf_data_pd.to_csv(qpf_data_path, index = False)
+# pop12_data_pd.to_csv(pop12_data_path, index = False)
+        
+# export data availability
+data_availability_path = data_dir + "data_available.csv"
+data_available_pd.to_csv(data_availability_path, index = False)
     
 # it works! :)
 # can do about 1-2 days per min so for all 1095 days would take about 18.25 hours
