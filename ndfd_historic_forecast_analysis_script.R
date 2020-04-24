@@ -57,17 +57,17 @@ st_crs(state_bounds_shp_raw) # 5070 will need to convert to 102008
 # ---- wrangle pop12 data ----
 # initial clean up
 ndfd_pop12_data <- ndfd_pop12_data_raw %>%
-  dplyr::select(x_index, y_index, latitude, longitude, time_uct, time_nyc, pop12_value_perc, valid_period_hrs) %>%
-  dplyr::mutate(latitude_m = latitude * 1000,
-         longitude_m = longitude * 1000)
+  dplyr::select(x_index, y_index, latitude_km, longitude_km, time_uct, time_nyc, pop12_value_perc, valid_period_hrs) %>%
+  dplyr::mutate(latitude_m = latitude_km * 1000,
+         longitude_m = longitude_km * 1000)
 
 
 # ---- wrangle qpf data ----
 # initial clean up
 ndfd_qpf_data <- ndfd_qpf_data_raw %>%
-  dplyr::select(x_index, y_index, latitude, longitude, time_uct, time_nyc, qpf_value_kmperm2, valid_period_hrs) %>%
-  dplyr::mutate(latitude_m = latitude * 1000,
-         longitude_m = longitude * 1000,
+  dplyr::select(x_index, y_index, latitude_km, longitude_km, time_uct, time_nyc, qpf_value_kmperm2, valid_period_hrs) %>%
+  dplyr::mutate(latitude_m = latitude_km * 1000,
+         longitude_m = longitude_km * 1000,
          qpf_value_in = qpf_value_kmperm2 * (1/1000) * (100) * (1/2.54)) # convert to inches, density of water is 1000 kg/m3
 
 
@@ -186,15 +186,15 @@ dev.off()
 
 # ---- make vector data into a raster ----
 # make empty pop12 raster
-ndfd_pop12_grid_1day <- raster(ncol = length(unique(ndfd_pop12_shp_1day$longitude)), 
-                               nrows = length(unique(ndfd_pop12_shp_1day$latitude)), 
+ndfd_pop12_grid_1day <- raster(ncol = length(unique(ndfd_pop12_shp_1day$longitude_km)), 
+                               nrows = length(unique(ndfd_pop12_shp_1day$latitude_km)), 
                                crs = na_albers_proj4,
                                ext = extent(ndfd_pop12_shp_1day)) #, 
                                #res = c(5000, 5000)) # b/c coordinates are in m this is 5km x 5km
 
 # make empty qpf raster
-ndfd_qpf_grid_1day <- raster(ncol = length(unique(ndfd_qpf_shp_1day$longitude)), 
-                               nrows = length(unique(ndfd_qpf_shp_1day$latitude)), 
+ndfd_qpf_grid_1day <- raster(ncol = length(unique(ndfd_qpf_shp_1day$longitude_km)), 
+                               nrows = length(unique(ndfd_qpf_shp_1day$latitude_km)), 
                                crs = na_albers_proj4,
                                ext = extent(ndfd_qpf_shp_1day)) #, 
                                #res = c(5000, 5000)) # b/c coordinates are in m this is 5km x 5km
