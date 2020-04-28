@@ -204,15 +204,14 @@ ndfd_qpf_grid_1day <- raster(ncol = length(unique(ndfd_qpf_shp_1day$longitude_km
 #st_make_grid() isn't going to work b/c this doesn't let you keep a third value
 
 # rasterize pop12
-ndfd_pop12_grid_1day <- rasterize(ndfd_pop12_shp_1day, ndfd_pop12_grid_1day, field = ndfd_pop12_shp_1day$pop12_value_perc, fun = mean)
-
+ndfd_pop12_grid_1day_ra <- rasterize(ndfd_pop12_shp_1day, ndfd_pop12_grid_1day, field = ndfd_pop12_shp_1day$pop12_value_perc, fun = mean)
 
 # rasterize qpf
-ndfd_qpf_grid_1day <- rasterize(ndfd_qpf_shp_1day, ndfd_qpf_grid_1day, field = ndfd_qpf_shp_1day$qpf_value_in, fun = mean)
+ndfd_qpf_grid_1day_ra <- rasterize(ndfd_qpf_shp_1day, ndfd_qpf_grid_1day, field = ndfd_qpf_shp_1day$qpf_value_in, fun = mean)
 
 # plot to check
-plot(ndfd_pop12_grid_1day)
-plot(ndfd_qpf_grid_1day)
+plot(ndfd_pop12_grid_1day_ra)
+plot(ndfd_qpf_grid_1day_ra)
 
 # export to check in qgis
 # writeRaster(ndfd_pop12_grid_1day, paste0(figure_path, "pop12_1day.tif"))
