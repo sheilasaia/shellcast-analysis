@@ -103,13 +103,26 @@ sga_bounds <- sga_data_raw %>%
          jursidiction = JURISDCTN,
          water_desc = WATER_DES,
          surface = SURFACE,
-         creator = CREATOR) # reorder columns
+         creator = CREATOR)# reorder columns
 
+# check validity of polygons
+sga_bounds$polygon_valid_check <- st_is_valid(sga_bounds)
+
+# filter by only polygons that are valid
+sga_bounds_valid <- sga_bounds %>%
+  filter(polygon_valid_check == TRUE)
+
+# steps to get data into polygons (did this in qgis but could i do it in R?)
+# 1. group by ga and then ga class
+# 2. dissolve
+# 3. buffer with units as = 0.00001 (for WGS84 = EPSG 4326)
+# 4. project?
+# qgis scripting (in python) https://www.qgistutorials.com/en/docs/processing_python_scripts.html
 
 # ---- 4. export tidied data ----
 
 st_write(sga_bounds, paste0(spatial_data_export_path, "sga_bounds_r.shp"))
-
+st_write(sga_bounds_valid, paste0(spatial_data_export_path, "sga_bounds_r_valid.shp"))
 
 
 
