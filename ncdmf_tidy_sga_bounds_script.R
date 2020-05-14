@@ -108,9 +108,48 @@ sga_bounds <- sga_data_raw %>%
 # check validity of polygons
 sga_bounds$polygon_valid_check <- st_is_valid(sga_bounds)
 
+# look at invalid sga's
+sga_bounds_invalid_tabular <- sga_bounds %>% 
+  st_drop_geometry() %>%
+  filter(polygon_valid_check == FALSE)
+
+# list of sga's with invalid geometries
+sga_bounds_invalid_list <- unique(sga_bounds_invalid_tabular$grow_area)
+length(sga_bounds_invalid_list) #45
+
+# export each sga as a separate file (for manual fixing in QGIS)
+for (i in 1:length(sga_bounds_invalid_list)) {
+  sga_temp <- sga_bounds_invalid_list[i]
+  sga_select_shp_temp <- sga_bounds %>%
+    filter(grow_area == sga_temp)
+  sga_temp_path <- paste0(spatial_data_export_path, "sga_fixing/sga_", sga_temp, ".shp")
+  st_write(sga_select_shp_temp, sga_temp_path)
+}
+
+# list of completely valid sga's
+sga_bounds_all_comp <- data.frame(grow_area = unique(sga_bounds$grow_area))
+sga_bounds_invalid_comp <- data.frame(grow_area = unique(sga_bounds_invalid_list))
+sga_bounds_valid_comp <- anti_join(sga_bounds_all_comp, sga_bounds_invalid_comp)
+sga_bounds_valid_comp_list <- sga_bounds_valid_comp$grow_area
+
+# keep valid sga's together
+sga_bounds_valid <- sga_bounds %>%
+  filter(grow_area %in% sga_bounds_valid_comp_list)
+
+# export all sga's that are valid in one file
+st_write(sga_bounds_valid, paste0(spatial_data_export_path, "sga_fixing/sga_ok.shp"))
+
+
 # filter by only polygons that are valid
 sga_bounds_valid <- sga_bounds %>%
   filter(polygon_valid_check == TRUE)
+
+test <- sga_bounds_valid %>%
+  group_by(grow_area, grow_area_class) %>%
+  summarise()
+# all other tabular data is missing tho!
+
+test_2 <- 
 
 # steps to get data into polygons (did this in qgis but could i do it in R?)
 # 1. group by ga and then ga class
@@ -119,11 +158,14 @@ sga_bounds_valid <- sga_bounds %>%
 # 4. project?
 # qgis scripting (in python) https://www.qgistutorials.com/en/docs/processing_python_scripts.html
 
+# qgis check invalid geometries: https://www.qgistutorials.com/en/docs/3/handling_invalid_geometries.html
+# do this for each ga?
+  
 # ---- 4. export tidied data ----
 
-st_write(sga_bounds, paste0(spatial_data_export_path, "sga_bounds_r.shp"))
-st_write(sga_bounds_valid, paste0(spatial_data_export_path, "sga_bounds_r_valid.shp"))
-
+st_write(sga_bounds, paste0(spatial_data_export_path, "sga_bounds/sga_bounds_r.shp"))
+st_write(sga_bounds_valid, paste0(spatial_data_export_path, "sga_bounds/sga_bounds_r_valid.shp"))
+st_write(test, paste0(spatial_data_export_path, "sga_bounds/sga_bounds_r_dissolve.shp"))
 
 
   
