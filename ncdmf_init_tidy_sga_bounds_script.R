@@ -86,13 +86,17 @@ sga_data_raw <- st_read(paste0(spatial_data_path, "SGA_Current_Classifications_m
 
 # ---- 3. initial tidy sga bounds ----
 
+# check crs
+st_crs(sga_data_raw)
+# it's not projected (wgs 84)
+
 # initial tidy
 sga_data_raw_small <- sga_data_raw %>%
   select(OBJECTID_1, REGION:DSHA_NAME, HA_NAME, HA_CLASS, HA_CLASSID, HA_STATUS, MAP_NAME:SQ_MILES) %>%
   filter(is.na(GROW_AREA) != TRUE) # ignore rows where GROW_AREA = NULL
 
 # export to fix geometries in QGIS using 'fix geometries' and 'check validity' tools
-st_write(sga_data_raw_small, paste0(spatial_data_export_path, "sga_bounds/sga_bounds_raw.shp"), )
+st_write(sga_data_raw_small, paste0(spatial_data_export_path, "sga_bounds/sga_bounds_raw_wgs84.shp"), )
 
 # QGIS 'fix geometries' and 'check validity' tools version requirements
 # QGIS version: 3.10.3-A Coruña
@@ -103,7 +107,7 @@ st_write(sga_data_raw_small, paste0(spatial_data_export_path, "sga_bounds/sga_bo
 # PROJ version: Rel. 5.2.0, September 15th, 2018
 
 # run these two tools and fixed all invalid polygons
-# saved fixed (and checked) file in QGIS as 'sga_bounds_raw_fixed.shp' in the 'data/spatial/sheila_generated/sga_bounds/' directory
+# saved fixed (and checked) file in QGIS as 'sga_bounds_raw_valid_wgs84.shp' in the 'data/spatial/sheila_generated/sga_bounds/' directory
 
 
 
