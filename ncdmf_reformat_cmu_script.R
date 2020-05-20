@@ -14,7 +14,7 @@
 # to do list
 
 # TODO ask andy why BS_10, NPT1, NPT2A, NPT2B, NPT3, NPT4, and NPT5 are missing from the cmu shp file
-# 
+# TODO fix projection, don't use 5070, use 102008 instead
 
 # ---- load libraries ----=
 # load libraries
@@ -52,10 +52,15 @@ st_crs(cmu_shp_raw)
 st_crs(state_bounds_shp_raw)
 # epsg 5070 (albers conic equal area)
 
+# define epsg and proj4 for N. America Albers projection (projecting to this)
+na_albers_proj4 <- "+proj=aea +lat_1=20 +lat_2=60 +lat_0=40 +lon_0=-96 +x_0=0 +y_0=0 +datum=NAD83 +units=m +no_defs"
+na_albers_epsg <- 102008
+
+# FIX!
 # projectd cmu data to albers conic equal area
-cmu_shp_raw_albers <- cmu_shp_raw %>%
-  st_transform(crs = 5070)
-st_crs(cmu_shp_raw_albers)
+#cmu_shp_raw_albers <- cmu_shp_raw %>%
+#  st_transform(crs = 5070)
+#st_crs(cmu_shp_raw_albers)
 # ok!
 
 
