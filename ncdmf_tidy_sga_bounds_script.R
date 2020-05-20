@@ -15,23 +15,32 @@
 # to do list
 
 
-# ---- 1. load libraries and set paths----
+# ---- 1. load libraries ----
 # load libraries
 library(tidyverse)
 library(sf)
+library(geojsonsf)
 
-# set paths
+
+# ---- 2. define paths and projections ----
+# data path
 spatial_data_path <- "/Users/sheila/Documents/bae_shellcast_project/shellcast_analysis/data/spatial/sheila_generated/sga_bounds/"
 
 # export path
 # same as spatial_data_path for now
 spatial_data_export_path <- "/Users/sheila/Documents/bae_shellcast_project/shellcast_analysis/data/spatial/sheila_generated/sga_bounds/"
 
+# define epsg and proj4 for N. America Albers projection
+na_albers_proj4 <- "+proj=aea +lat_1=20 +lat_2=60 +lat_0=40 +lon_0=-96 +x_0=0 +y_0=0 +datum=NAD83 +units=m +no_defs"
+na_albers_epsg <- 102008
 
-# ---- 2. load data ----
+# define wgs 84 projection
+wgs84_epsg <- 4326
 
+
+# ---- 3. load data ----
 # shellfish growing area data that's been initially cleaned (see ncdmf_init_tidy_sga_bounds_script.R)
-sga_data_raw <- st_read(paste0(spatial_data_path, "sga_bounds_raw_fixed.shp"))
+sga_bounds_raw <- st_read(paste0(spatial_data_path, "sga_bounds_raw_valid_wgs84.shp"))
 
 # columns
 # OBJECTID_1 - not really sure what these are but think these are all artifacts from ArcGIS
@@ -57,10 +66,9 @@ sga_data_raw <- st_read(paste0(spatial_data_path, "sga_bounds_raw_fixed.shp"))
 # SQ_MILES = area of grow area in sqare miles
 
 
-# ---- 3. tidy sga bounds attribute data ----
-
+# ---- 4. tidy sga bounds attribute data ----
 # tidy data
-sga_bounds <- sga_data_raw %>%
+sga_bounds <- sga_bounds_raw %>%
   mutate(grow_area_class = if_else(HA_CLASSID == "APP", "approved",
                             if_else(HA_CLASSID == "CA-O" | HA_CLASSID == "CA-C", "cond_approved",
                                     if_else(HA_CLASSID == "CSHA-P", "prohibited", "restricted"))), # don't care if they're open or closed, just if they are approved, conditionally approve, prohibited, or restricted
@@ -90,45 +98,75 @@ sga_bounds_row_5399_fix <- sga_bounds %>%
 sga_bounds_row_5399_fix$dsha_name <- "North River"
 sga_bounds_row_5399_fix$ha_name_fix <- "North River"
 
-# take out and add fixed version of row 5399 back
-sga_bounds <- sga_bounds %>%
+# take out and add fixed version of row 5399 back and project
+sga_bounds_albers <- sga_bounds %>%
   filter(row_id != 5399) %>%
-  rbind(sga_bounds_row_5399_fix)
+  rbind(sga_bounds_row_5399_fix) %>%
+  st_transform(crs = na_albers_epsg)
+st_crs(sga_bounds_albers)
 
-# check validity of polygons
-sga_bounds$polygon_valid_check <- st_is_valid(sga_bounds)
+# check validity of polygons (shouldn't be a problem but just in case)
+sga_bounds_albers$polygon_valid_check <- st_is_valid(sga_bounds_albers)
 
 # look at invalid sga's
-sga_bounds_invalid_tabular <- sga_bounds %>% 
+sga_bounds_albers_invalid_tabular <- sga_bounds_albers %>% 
   st_drop_geometry() %>%
   filter(polygon_valid_check == FALSE)
 # there should be no invalid polygons which is true, so, check!
 
+# save as wgs84 too
+sga_bounds_wgs84 <- sga_bounds_albers %>%
+  st_transform(crs = wgs84_epsg)
+
 # export
-st_write(sga_bounds, paste0(spatial_data_export_path, "sga_bounds_tidy.shp"))
-
-
-# ---- 4. tidy sga boundaries by sga and class ----
-
-# summarize boundaries (equivalent to spatial dissolve)
-sga_class_bounds <- sga_bounds %>%
-  group_by(grow_area, grow_area_class, ha_name_fix) %>% # group by sga name and class
-  summarize() %>%
-  st_buffer(dist = 0.00001) # buffer by very small amount (~3ft buffer) to get clean boundary, distance units are in decimal degrees
-
-# export data
-st_write(sga_class_bounds, paste0(spatial_data_export_path, "sga_class_bounds.shp"))
+# st_write(sga_bounds_albers, paste0(spatial_data_export_path, "sga_bounds_tidy_albers.shp"))
+# st_write(sga_bounds_wgs84, paste0(spatial_data_export_path, "sga_bounds_tidy_wgs84.shp"))
 
 
 # ---- 5. tidy sga boundaries by sga (simple boundary line) ----
-
 # summarize boundaries (equivalent to spatial dissolve)
-sga_bounds_simple <- sga_bounds %>%
+sga_bounds_simple_albers <- sga_bounds_albers %>%
   group_by(grow_area) %>% # group by sga name
   summarize() %>%
-  st_buffer(dist = 0.00001) # distance units are in decimal degrees (~3ft buffer)
+  st_buffer(dist = 1) %>% # distance units are meters
+  st_simplify(preserveTopology = TRUE, dTolerance = 100) # in units of meters
 
 # export data
-st_write(sga_bounds_simple, paste0(spatial_data_export_path, "sga_bounds_simple.shp"))
+# st_write(sga_bounds_simple_albers, paste0(spatial_data_export_path, "sga_bounds_simple_albers.shp"))
+
+# save as wgs84 too
+sga_bounds_simple_wgs84 <- sga_bounds_simple_albers %>%
+  st_transform(crs = wgs84_epsg)
+
+# export data
+# st_write(sga_bounds_simple_wgs84, paste0(spatial_data_export_path, "sga_bounds_simple_wgs84.shp"))
+
+# simplify further to reduce geoJSON size for the web app
+sga_bounds_simple_wgs84_geojson <- sf_geojson(sga_bounds_simple_wgs84, atomise = FALSE, simplify = TRUE, digits = 5)
+
+# export geoJSON
+write_file(sga_bounds_simple_wgs84_geojson, paste0(spatial_data_export_path, "sga_bounds_simple_wgs84.geojson"))
+
+
+# ---- 6. tidy sga boundaries by sga and class ----
+# summarize boundaries (equivalent to spatial dissolve)
+sga_bounds_class_albers <- sga_bounds_albers %>%
+  group_by(grow_area, grow_area_class, ha_name_fix) %>% # group by sga name and class
+  summarize() %>%
+  st_buffer(dist = 1) # buffer 1 m
+
+# export data
+# st_write(sga_bounds_class_albers, paste0(spatial_data_export_path, "sga_bounds_class_albers.shp"))
+
+# save as wgs84 too
+sga_bounds_class_wgs84 <- sga_bounds_class_albers %>%
+  st_transform(crs = wgs84_epsg)
+
+# export data
+# st_write(sga_bounds_class_wgs84, paste0(spatial_data_export_path, "sga_bounds_class_wgs84.shp"))
+
+
+
+
 
 
