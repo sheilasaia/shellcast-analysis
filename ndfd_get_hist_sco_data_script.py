@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 """
-ndfd_get_sco_data_script.py
+ndfd_get_hist_sco_data_script.py
 
 This script grabs historic National Digital Forecast Dataset (NDFD) data from the NC State Climate Office (SCO) TDS server, reformats it, and stores it in a local directory.
 
-To see the catalog website: https://tds.climate.ncsu.edu/thredds/catalog/nws/ndfd/catalog.html
+To see the nc sco catalog website: https://tds.climate.ncsu.edu/thredds/catalog/nws/ndfd/catalog.html
 
 Last Updated: 20200408
 Created By: Sheila (ssaia@ncsu.edu)
@@ -19,6 +19,7 @@ Created By: Sheila (ssaia@ncsu.edu)
 
 # pydap help: https://pydap.readthedocs.io/en/latest/developer_data_model.html
 # thredds help (with python code): https://oceanobservatories.org/thredds-quick-start/#python
+# to see the nc sco catalog website: https://tds.climate.ncsu.edu/thredds/catalog/nws/ndfd/catalog.html
 
 # %% load libraries
 
@@ -31,8 +32,7 @@ import requests # to check if website exists
 # %% set paths
 
 # define data directory path (for export)
-# data_dir = '/Users/sheila/Documents/bae_shellcast_project/shellcast_analysis/ndfd_get_data/data/ndfd_sco_data/'
-data_dir = '/Users/sheila/Documents/bae_shellcast_project/shellcast_analysis/data/tabular/ndfd_sco_data/'
+data_dir = '/Users/sheila/Documents/bae_shellcast_project/shellcast_analysis/data/tabular/ndfd_sco_hist_raw/'
 
 # %% datetime format conversion function
 
