@@ -12,9 +12,7 @@ Created By: Sheila (ssaia@ncsu.edu)
 
 # %% to do list
 
-# TODO check in with John about qpf noon 72 hr forecast
-# TODO create status file for each day?
-# TODO finish export of data based on time in UCT
+# TODO check in with John about qpf noon 72 hr forecast (not currently available)
 
 
 # %% help
@@ -414,12 +412,14 @@ def tidy_sco_ndfd_data(ndfd_data, datetime_uct_str, ndfd_var):
 # not sure how to pull the date time out of this
 
 # date now
-datetime_now_nyc = pandas.to_datetime(dt.datetime.now()) # this is local time (ET) but server is in UCT
-datetime_now_uct = datetime_now_nyc.tz_localize(tz = 'UCT')
-datetime_now_uct_str = datetime_now_uct.strftime("%Y-%m-%d %H:%M")
+datetime_now = pandas.to_datetime(dt.datetime.now(), format = "%Y-%m-%d %H:%M") # this is local time (ET) but server is in UCT
+datetime_now_nyc = datetime_now.tz_localize(tz = "America/New_York")
+datetime_now_uct = datetime_now_nyc.tz_convert(tz = "UCT")
+datetime_now_uct_str_full = datetime_now_uct.strftime("%Y-%m-%d %H:%M")
+datetime_now_uct_str_short = datetime_now_uct.strftime("%Y-%m-%d")
 
 # date now (midnight)
-test_midnight_datetime_str = datetime_now_uct_str.strftime("%Y-%m-%d") + " 00:00"
+test_midnight_datetime_str = datetime_now_uct_str_short + " 00:00"
 
 # test function
 test_midnight_ym_str, test_midnight_ymd_str, test_midnight_ymdh_str = convert_sco_ndfd_datetime_str(datetime_str = test_midnight_datetime_str)
@@ -441,7 +441,7 @@ test_midnight_pop12_data_pd, test_midnight_pop12_datetime_ymdh_str = tidy_sco_nd
 
 
 # date now (noon)
-test_noon_datetime_str = datetime_now_uct_str.strftime("%Y-%m-%d") + " 12:00"
+test_noon_datetime_str = datetime_now_uct_str_short + " 12:00"
 
 # test function
 test_noon_ym_str, test_noon_ymd_str, test_noon_ymdh_str = convert_sco_ndfd_datetime_str(datetime_str = test_noon_datetime_str)
@@ -470,80 +470,90 @@ ndfd_sco_server_url = 'https://tds.climate.ncsu.edu/thredds/dodsC/nws/ndfd/'
 # keep track of available dates
 data_available_pd = pandas.DataFrame(columns = ['datetime_uct_str', 'status'])
 
-# %% loop!
-for date in range(508, len(datetime_list_pd)):
-    # grab datetime
-    temp_datetime_uct_str = datetime_list_pd['datetime_uct_str'][date]
+# get time now
+#datetime_now_nyc = pandas.to_datetime(dt.datetime.now(), format = "%Y-%m-%d %H:%M").tz_localize(tz = "America/New_York") # this is local time (ET) but server is in UCT
+datetime_now_nyc = pandas.to_datetime("2020-05-28 07:00", format = "%Y-%m-%d %H:%M").tz_localize(tz = "America/New_York") # force midnight uct grab at 8am et
+#datetime_now_nyc = pandas.to_datetime("2020-05-28 15:00", format = "%Y-%m-%d %H:%M").tz_localize(tz = "America/New_York") # force noon uct grab at 8pm et
 
-    # get data
-    temp_data = get_sco_ndfd_data(base_server_url = ndfd_sco_server_url, datetime_uct_str = temp_datetime_uct_str)
+# convert to uct
+datetime_now_uct = datetime_now_nyc.tz_convert(tz = "UCT")
 
-    # only append data when it exists
-    if (len(temp_data) > 0):
-        # tidy qpf and pop12 data
-        temp_qpf_data_pd, temp_qpf_datetime_ymdh_str = tidy_sco_ndfd_data(ndfd_data = temp_data, datetime_uct_str = temp_datetime_uct_str, ndfd_var = "qpf")
-        temp_pop12_data_pd, temp_pop12_datetime_ymdh_str = tidy_sco_ndfd_data(ndfd_data = temp_data, datetime_uct_str = temp_datetime_uct_str, ndfd_var = "pop12")
+# round up to nearest hour in uct
+datetime_now_uct_td = dt.timedelta(hours = datetime_now_uct.hour, minutes = datetime_now_uct.minute, seconds=datetime_now_uct.second, microseconds = datetime_now_uct.microsecond)
+to_hour = dt.timedelta(hours=round(datetime_now_uct_td.total_seconds()/3600))
+datetime_now_round_uct = pandas.to_datetime((dt.datetime.combine(datetime_now_uct, dt.time(0)) + to_hour), format = "%Y-%m-%d %H:%M").tz_localize(tz = "UCT")
 
-        # check if desired times were available, only keep when we have both
-        if ((len(temp_qpf_data_pd) > 0) and (len(temp_pop12_data_pd) > 0)):
-            # append data to final dataframe
-            # qpf_data_pd = qpf_data_pd.append(temp_qpf_data_pd, ignore_index = True)
-            # pop12_data_pd = pop12_data_pd.append(temp_pop12_data_pd, ignore_index = True)
+# calc other bounds
+datetime_midnighttoday_uct = pandas.to_datetime((datetime_now_round_uct.strftime("%Y-%m-%d") + " 00:00")).tz_localize("UCT")
+datetime_noontoday_uct = pandas.to_datetime((datetime_now_round_uct.strftime("%Y-%m-%d") + " 12:00")).tz_localize("UCT")
+datetime_midnightnextd_uct = datetime_midnighttoday_uct + pandas.DateOffset(days = 1)
 
-            # define export path
-            temp_datetime_ymdh_str = convert_sco_ndfd_datetime_str(temp_datetime_uct_str)[2]
-            temp_qpf_data_path = data_dir + "qpf_" + temp_datetime_ymdh_str +  ".csv" # data_dir definited at top of script
-            temp_pop12_data_path = data_dir + "pop12_" + temp_datetime_ymdh_str + ".csv" # data_dir definited at top of script
+# determine datetime string to use for query using bounds
+if (datetime_now_round_uct >= datetime_midnighttoday_uct) & (datetime_now_round_uct < datetime_noontoday_uct): # between midnight and noon
+    temp_datetime_uct_str = datetime_midnighttoday_uct.strftime("%Y-%m-%d %H:%M")
+elif (datetime_now_round_uct >= datetime_noontoday_uct) & (datetime_now_round_uct < datetime_midnightnextd_uct): # between noon and midnight
+    temp_datetime_uct_str = datetime_noontoday_uct.strftime("%Y-%m-%d %H:%M")
 
-            # export results
-            temp_qpf_data_pd.to_csv(temp_qpf_data_path, index = False)
-            temp_pop12_data_pd.to_csv(temp_pop12_data_path, index = False)
+# convert datetime to simple string for later data export
+temp_datetime_ymdh_str = convert_sco_ndfd_datetime_str(temp_datetime_uct_str)[2]
+temp_datetime_ymdh_str
 
-            # keep track of available data
-            temp_data_available_pd = pandas.DataFrame({'datetime_uct_str':[temp_datetime_uct_str], 'status':["available"]})
-            data_available_pd = data_available_pd.append(temp_data_available_pd, ignore_index = True)
+# %% 
 
-            # print status
-            # print("appended " + temp_datetime_uct_str + " data")
-            print("exported " + temp_datetime_uct_str + " data")
+# get data
+temp_data = get_sco_ndfd_data(base_server_url = ndfd_sco_server_url, datetime_uct_str = temp_datetime_uct_str)
 
-        else:
-            # keep track of available data
-            temp_data_available_pd = pandas.DataFrame({'datetime_uct_str':[temp_datetime_uct_str], 'status':["not_available"]})
-            data_available_pd = data_available_pd.append(temp_data_available_pd, ignore_index = True)
+# only append data when it exists
+if (len(temp_data) > 0):
+    # tidy qpf and pop12 data
+    temp_qpf_data_pd, temp_qpf_datetime_ymdh_str = tidy_sco_ndfd_data(ndfd_data = temp_data, datetime_uct_str = temp_datetime_uct_str, ndfd_var = "qpf")
+    temp_pop12_data_pd, temp_pop12_datetime_ymdh_str = tidy_sco_ndfd_data(ndfd_data = temp_data, datetime_uct_str = temp_datetime_uct_str, ndfd_var = "pop12")
 
-            # print status
-            print("did not append " + temp_datetime_uct_str + " data")
+    # check if desired times were available, only keep when we have both
+    if ((len(temp_qpf_data_pd) > 0) and (len(temp_pop12_data_pd) > 0)):
+
+        # define export path
+        temp_qpf_data_path = data_dir + "qpf_" + temp_datetime_ymdh_str +  ".csv" # data_dir definited at top of script
+        temp_pop12_data_path = data_dir + "pop12_" + temp_datetime_ymdh_str + ".csv" # data_dir definited at top of script
+
+        # export results
+        temp_qpf_data_pd.to_csv(temp_qpf_data_path, index = False)
+        temp_pop12_data_pd.to_csv(temp_pop12_data_path, index = False)
+
+        # keep track of available data
+        temp_data_available_pd = pandas.DataFrame({'datetime_uct_str':[temp_datetime_uct_str], 'status':["available"]})
+        data_available_pd = data_available_pd.append(temp_data_available_pd, ignore_index = True)
+        
+        # export data availability
+        data_availability_path = data_dir + "data_available_" + temp_datetime_ymdh_str +  ".csv"
+        data_available_pd.to_csv(data_availability_path, index = False)
+
+        # print status
+        print("exported " + temp_datetime_uct_str + " data")
 
     else:
         # keep track of available data
         temp_data_available_pd = pandas.DataFrame({'datetime_uct_str':[temp_datetime_uct_str], 'status':["not_available"]})
         data_available_pd = data_available_pd.append(temp_data_available_pd, ignore_index = True)
+        
+        # export data availability
+        data_availability_path = data_dir + "data_available_" + temp_datetime_ymdh_str +  ".csv"
+        data_available_pd.to_csv(data_availability_path, index = False)
 
         # print status
         print("did not append " + temp_datetime_uct_str + " data")
 
-# %%
-# define qpf and pop12 data export paths
-# qpf_data_path = data_dir + "qpf" + "_.csv" # data_dir definited at top of script
-# pop12_data_path = data_dir + "pop12" + "_data.csv" # data_dir definited at top of script
+else:
+    # keep track of available data
+    temp_data_available_pd = pandas.DataFrame({'datetime_uct_str':[temp_datetime_uct_str], 'status':["not_available"]})
+    data_available_pd = data_available_pd.append(temp_data_available_pd, ignore_index = True)
+    
+    # export data availability
+    data_availability_path = data_dir + "data_available_" + temp_datetime_ymdh_str +  ".csv"
+    data_available_pd.to_csv(data_availability_path, index = False)
 
-# export qpf and pop12 data
-# qpf_data_pd.to_csv(qpf_data_path, index = False)
-# pop12_data_pd.to_csv(pop12_data_path, index = False)
-
-# export data availability
-data_availability_path = data_dir + "data_available.csv"
-data_available_pd.to_csv(data_availability_path, index = False)
-
-# export datetime dataframe
-datetime_pd_path = data_dir + "datetime_list_pd.csv"
-datetime_list_pd.to_csv(datetime_pd_path, index = False)
-
-# it works! :)
-# can do about 1-2 days per min so for all 1095 days would take about 18.25 hours
-
-
+    # print status
+    print("did not append " + temp_datetime_uct_str + " data")
 
 # %% testing times
 base_server_url = 'https://tds.climate.ncsu.edu/thredds/dodsC/nws/ndfd/'
