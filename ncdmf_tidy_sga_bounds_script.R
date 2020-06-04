@@ -122,7 +122,6 @@ sga_bounds_wgs84 <- sga_bounds_albers %>%
 # st_write(sga_bounds_albers, paste0(spatial_data_export_path, "sga_bounds_tidy_albers.shp"))
 # st_write(sga_bounds_wgs84, paste0(spatial_data_export_path, "sga_bounds_tidy_wgs84.shp"))
 
-
 # ---- 5. tidy sga boundaries by sga (simple boundary line) ----
 # summarize boundaries (equivalent to spatial dissolve)
 sga_bounds_simple_albers <- sga_bounds_albers %>%
