@@ -30,6 +30,9 @@ spatial_data_path <- "/Users/sheila/Documents/bae_shellcast_project/shellcast_an
 # same as spatial_data_path for now
 spatial_data_export_path <- "/Users/sheila/Documents/bae_shellcast_project/shellcast_analysis/data/spatial/sheila_generated/sga_bounds/"
 
+# figure export path
+figure_path <- "/Users/sheila/Documents/bae_shellcast_project/shellcast_analysis/results/figures/"
+
 # define epsg and proj4 for N. America Albers projection
 na_albers_proj4 <- "+proj=aea +lat_1=20 +lat_2=60 +lat_0=40 +lon_0=-96 +x_0=0 +y_0=0 +datum=NAD83 +units=m +no_defs"
 na_albers_epsg <- 102008
@@ -144,10 +147,32 @@ sga_bounds_simple_wgs84 <- sga_bounds_simple_albers %>%
 sga_bounds_simple_wgs84_geojson <- sf_geojson(sga_bounds_simple_wgs84, atomise = FALSE, simplify = TRUE, digits = 5)
 
 # export geoJSON
-write_file(sga_bounds_simple_wgs84_geojson, paste0(spatial_data_export_path, "sga_bounds_simple_wgs84.geojson"))
+# write_file(sga_bounds_simple_wgs84_geojson, paste0(spatial_data_export_path, "sga_bounds_simple_wgs84.geojson"))
 
 
-# ---- 6. tidy sga boundaries by sga and class ----
+# ---- 6. calculate simple buffer around sga bounds ----
+# sga buffer
+sga_bounds_buffer_albers <- sga_bounds_simple_albers %>%
+  st_convex_hull() %>% # for each sga
+  summarize() %>% # dissolve sga bounds
+  st_buffer(dist = 10000) %>% # buffer distance is in m so 10 * 1000m = 10km
+  st_convex_hull() # simple buffer
+
+# pdf(paste0(figure_path, "sga_bounds_buffer.pdf"), width = 11, height = 8.5)
+# ggplot(data = sga_bounds_buffer_albers) +
+#   geom_sf()
+# dev.off()
+
+# save a copy projected to wgs84
+sga_bounds_buffer_wgs84 <- sga_bounds_buffer_albers %>%
+  st_transform(crs = wgs84_epsg)
+
+# export
+st_write(sga_bounds_buffer_albers, paste0(spatial_data_export_path, "sga_bounds_buffer_albers.shp"))
+st_write(sga_bounds_buffer_wgs84, paste0(spatial_data_export_path, "sga_bounds_buffer_wgs84.shp"))
+
+
+# ---- 7. tidy sga boundaries by sga and class ----
 # summarize boundaries (equivalent to spatial dissolve)
 sga_bounds_class_albers <- sga_bounds_albers %>%
   group_by(grow_area, grow_area_class, ha_name_fix) %>% # group by sga name and class
@@ -163,7 +188,6 @@ sga_bounds_class_wgs84 <- sga_bounds_class_albers %>%
 
 # export data
 # st_write(sga_bounds_class_wgs84, paste0(spatial_data_export_path, "sga_bounds_class_wgs84.shp"))
-
 
 
 
