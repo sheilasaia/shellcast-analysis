@@ -45,8 +45,23 @@ wgs84_epsg <- 4326
 
 # ---- 3. load data ----
 # cmu spatial data
-cmu_bounds_raw <- st_read(paste0(spatial_data_path, "cmu_bounds/cmu_bounds_fix_bs10.shp"))
-# the original data 
+cmu_bounds_raw <- st_read(paste0(spatial_data_path, "cmu_bounds/cmu_bounds_fix_bs10_valid.shp"))
+
+# the file "cmu_bounds_fix_bs10_valid.shp" came from "Conditional_Management_Units.shp" from ncdmf
+# i used the 'multipart split editing tool to rename one of the two BS_1 cmu's
+# i then used 'fix geometires' and 'check validity' tools in QGIS to fix invalid geometries
+
+# QGIS 'fix geometries' and 'check validity' tools version requirements
+# QGIS version: 3.10.3-A Coruña
+# QGIS code revision: 0e1f846438
+# Qt version: 5.12.3
+# GDAL version: 2.4.1
+# GEOS version: 3.7.2-CAPI-1.11.2 b55d2125
+# PROJ version: Rel. 5.2.0, September 15th, 2018
+
+# run these two tools and fixed all invalid polygons
+# saved fixed (and checked) file in QGIS as 'sga_bounds_raw_valid_wgs84.shp' in the 'data/spatial/sheila_generated/sga_bounds/' directory
+
 
 # rainfall thresholds for cmu's
 rain_thresh_full_data_raw <- read_csv(paste0(tabular_data_path, "rainfall_thresholds.csv"), col_names = TRUE)
@@ -82,10 +97,10 @@ cmu_bounds_buffer_albers <- cmu_bounds_albers %>%
   st_buffer(dist = 10000) %>% # buffer distance is in m so 10 * 1000m = 10km
   st_convex_hull() # simple buffer
 
-pdf(paste0(figure_path, "cmu_bounds_buffer.pdf"), width = 11, height = 8.5)
-ggplot(data = cmu_bounds_buffer_albers) +
-  geom_sf()
-dev.off()
+# pdf(paste0(figure_path, "cmu_bounds_buffer.pdf"), width = 11, height = 8.5)
+# ggplot(data = cmu_bounds_buffer_albers) +
+#   geom_sf()
+# dev.off()
 
 # save a copy projected to wgs84
 cmu_bounds_buffer_wgs84 <- cmu_bounds_buffer_albers %>%
