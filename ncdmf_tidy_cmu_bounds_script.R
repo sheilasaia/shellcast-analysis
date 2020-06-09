@@ -69,7 +69,7 @@ rain_thresh_full_data_raw <- read_csv(paste0(tabular_data_path, "rainfall_thresh
 # ---- 4. tidy rainfall thresholds and join to cmu data ----
 # select only columns we need
 rain_thresh_data <- rain_thresh_full_data_raw %>%
-  dplyr::select(HA_CLASS, rain_lim_in = rainfall_threshold_in, rain_lim_lab = rainfall_threshold_class) %>%
+  dplyr::select(HA_CLASS, rain_in = rainfall_threshold_in, rain_lab = rainfall_threshold_class) %>%
   distinct()
 # 144 unique HA_CLASS values
 
