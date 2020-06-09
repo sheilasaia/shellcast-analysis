@@ -62,18 +62,37 @@ cmu_bounds_raw <- st_read(paste0(spatial_data_path, "cmu_bounds/cmu_bounds_fix_b
 # run these two tools and fixed all invalid polygons
 # saved fixed (and checked) file in QGIS as 'sga_bounds_raw_valid_wgs84.shp' in the 'data/spatial/sheila_generated/sga_bounds/' directory
 
-
 # rainfall thresholds for cmu's
 rain_thresh_full_data_raw <- read_csv(paste0(tabular_data_path, "rainfall_thresholds.csv"), col_names = TRUE)
 
 
-# ---- 4. check spatial data projections and project ----
+# ---- 4. tidy rainfall thresholds and join to cmu data ----
+# select only columns we need
+rain_thresh_data <- rain_thresh_full_data_raw %>%
+  dplyr::select(HA_CLASS, rain_lim_in = rainfall_threshold_in, rain_lim_lab = rainfall_threshold_class) %>%
+  distinct()
+# 144 unique HA_CLASS values
+
+# check unique HA_CLASS values in cmu_bounds_raw
+# length(unique(cmu_bounds_raw$HA_CLASS))
+# 144 as well! it checks!
+
+# join to cmu_bounds_raw
+cmu_bounds_raw_join <- cmu_bounds_raw %>%
+  left_join(rain_thresh_data, by = "HA_CLASS")
+
+# check that it joined
+# names(cmu_bounds_raw_join)
+# it checks!
+
+
+# ---- 4. check spatial data projections ----
 # check cmu data
-st_crs(cmu_bounds_raw)
+st_crs(cmu_bounds_raw_join)
 # epsg 32119 (nc nad83)
 
 # project to na albers
-cmu_bounds_albers <- cmu_bounds_raw %>%
+cmu_bounds_albers <- cmu_bounds_raw_join %>%
   st_transform(crs = na_albers_epsg)
 # st_crs(cmu_bounds_albers)
 # it checks!
@@ -114,18 +133,12 @@ st_write(cmu_bounds_buffer_wgs84, paste0(spatial_data_export_path, "cmu_bounds_b
 # ---- 5. simplify rainfall threshhold data ----
 # simplify rainfall thresholds for sharing with Andy
 rain_thresh_short <- rain_thresh_full_data_raw %>%
-  select(-grow_area) %>%
+  dplyr::select(-grow_area) %>%
   distinct()
 
 # export data
 write_csv(rain_thresh_short, paste0(tabular_data_export_path, "rainfall_thresholds_no_ga.csv"))
 
-
-# ---- 6. join rainfall thresholds with spatial cmu data ----
-# check HA_CLASS in both
-length(unique(cmu_bounds_albers$HA_CLASS)) # 144
-length(unique(rain_thresh_full_data_raw$HA_CLASS)) #144
-# same length, it checks!
 
 
  
