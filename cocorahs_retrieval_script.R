@@ -1,4 +1,18 @@
-# cocorahs data retrieval script
+# ---- script header ----
+# script name: cocorahs_retrieval_script.R
+# purpose of script: retrieves cocorahs data for specified date range
+# author: sheila saia
+# date created: 20200224
+# email: ssaia@ncsu.edu
+
+
+# ---- notes ----
+# notes:
+ 
+
+# ---- to do ----
+# to do list
+
 
 # ---- 1. load libraries and set paths----
 library(tidyverse)
