@@ -154,16 +154,13 @@ ndfd_qpf_albers_3day <- ndfd_qpf_albers %>%
 ndfd_pop12_grid_1day <- raster(ncol = length(unique(ndfd_pop12_albers_1day$longitude_km)), 
                                nrows = length(unique(ndfd_pop12_albers_1day$latitude_km)), 
                                crs = na_albers_proj4,
-                               ext = extent(ndfd_pop12_albers_1day)) #, 
-#res = c(5000, 5000)) # b/c coordinates are in m this is 5km x 5km
+                               ext = extent(ndfd_pop12_albers_1day))
 
 # make empty qpf raster 1-day
 ndfd_qpf_grid_1day <- raster(ncol = length(unique(ndfd_qpf_albers_1day$longitude_km)), 
                              nrows = length(unique(ndfd_qpf_albers_1day$latitude_km)), 
                              crs = na_albers_proj4,
-                             ext = extent(ndfd_qpf_albers_1day)) #, 
-#res = c(5000, 5000)) # b/c coordinates are in m this is 5km x 5km
-
+                             ext = extent(ndfd_qpf_albers_1day))
 
 # rasterize pop12
 ndfd_pop12_raster_1day_albers <- rasterize(ndfd_pop12_albers_1day, ndfd_pop12_grid_1day, field = ndfd_pop12_albers_1day$pop12_value_perc, fun = mean)
