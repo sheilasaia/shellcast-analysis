@@ -45,10 +45,11 @@ wgs84_epsg <- 4326
 
 # ---- 3. load data ----
 # cmu spatial data
-cmu_bounds_raw <- st_read(paste0(spatial_data_path, "cmu_bounds/cmu_bounds_fix_bs10_valid.shp"))
+cmu_bounds_raw <- st_read(paste0(spatial_data_path, "cmu_bounds/cmu_bounds_fix_bs10obx9a_valid.shp"))
 
-# the file "cmu_bounds_fix_bs10_valid.shp" came from "Conditional_Management_Units.shp" from ncdmf
-# i used the 'multipart split editing tool to rename one of the two BS_1 cmu's
+# the file "cmu_bounds_fix_bs10obx9a_valid.shp" came from "Conditional_Management_Units.shp" from ncdmf
+# i used the 'multipart split' editing tool to rename one of the two BS_1 cmu's
+# i used the 'multipart merge' editing tool to merge two OBX_9A cmu's
 # i then used 'fix geometires' and 'check validity' tools in QGIS to fix invalid geometries
 
 # QGIS 'fix geometries' and 'check validity' tools version requirements
@@ -71,11 +72,12 @@ rain_thresh_full_data_raw <- read_csv(paste0(tabular_data_path, "rainfall_thresh
 rain_thresh_data <- rain_thresh_full_data_raw %>%
   dplyr::select(HA_CLASS, rain_in = rainfall_threshold_in, rain_lab = rainfall_threshold_class) %>%
   distinct()
-# 144 unique HA_CLASS values
+length(unique(rain_thresh_data$HA_CLASS))
+# 144 unique HA_CLASS values 
 
 # check unique HA_CLASS values in cmu_bounds_raw
 # length(unique(cmu_bounds_raw$HA_CLASS))
-# 144 as well! it checks!
+# 144 unique HA_CLASS values! it's fine!
 
 # join to cmu_bounds_raw
 cmu_bounds_raw_join <- cmu_bounds_raw %>%
