@@ -408,7 +408,7 @@ test_data = get_sco_ndfd_data(base_server_url = ndfd_sco_server_url, datetime_uc
 test_qpf_data_pd, test_qpf_datetime_ymdh_str = tidy_sco_ndfd_data(ndfd_data = test_data, datetime_uct_str = test_datetime_uct_str, ndfd_var = "qpf")
 
 # tidy pop12 data
-test_pop12_data_pd, test_pop12_datetime_ymdh_str = tidy_sco_ndfd_data(ndfd_data = test_data, datetime_uct_str = test_datetime_uct_str, ndfd_var = "pop12")
+#test_pop12_data_pd, test_pop12_datetime_ymdh_str = tidy_sco_ndfd_data(ndfd_data = test_data, datetime_uct_str = test_datetime_uct_str, ndfd_var = "pop12")
 
 # test non-valid ndfd_var option
 #tidy_sco_ndfd_data(ndfd_data = test_data, datetime_uct_str = test_datetime_uct_str, ndfd_var = "qff")
@@ -454,7 +454,7 @@ qpf_data_pd = pandas.DataFrame(columns = ['index', 'y_index', 'x_index', 'qpf_va
 data_available_pd = pandas.DataFrame(columns = ['datetime_uct_str', 'status'])
 
 # %% loop!
-for date in range(508, len(datetime_list_pd)):
+for date in range(0, len(datetime_list_pd)):
     # grab datetime
     temp_datetime_uct_str = datetime_list_pd['datetime_uct_str'][date]
 
@@ -525,3 +525,39 @@ datetime_list_pd.to_csv(datetime_pd_path, index = False)
     
 # it works! :)
 # can do about 1-2 days per min so for all 1095 days would take about 18.25 hours
+
+
+
+# %% checking data availability for different times of the day
+
+#test_datetime_uct_str = "2016-01-01 22:00"
+#
+#test_ym_str, test_ymd_str, test_ymdh_str = convert_sco_ndfd_datetime_str(datetime_str = test_datetime_uct_str)
+#    
+#ndfd_sco_server_url = 'https://tds.climate.ncsu.edu/thredds/dodsC/nws/ndfd/'
+#
+#test_data = get_sco_ndfd_data(base_server_url = ndfd_sco_server_url, datetime_uct_str = test_datetime_uct_str)
+#
+#ndfd_data = test_data
+#
+#var_data = ndfd_data['Total_precipitation_surface_6_Hour_Accumulation']
+#
+#var_data_dims = var_data.dimensions
+#
+##var_data_dims
+#
+#var_data_time_dim = var_data_dims[0]
+#
+##var_data_time_dim
+#
+#var_time_np = numpy.array(var_data[var_data_time_dim][:])
+#
+#len(var_time_np)
+#var_time_np
+
+# at 00:00 have the following valid periods available for qpfarray([ 6., 12., 18., 24., 30., 36., 42., 48., 54., 60., 66., 72.])
+# at 12:00 have the following valid periods available for qpf array([ 6., 12., 18., 24., 30., 36., 42., 48., 54., 60.])
+# at 13:00 have the following valid periods available for qpf array([ 5., 11., 17., 23., 29., 35., 41., 47., 53., 59.])
+# from 13:00 - 21:00 there's no extra data available that would be helpful to us
+# at 22:00 have the following valid periods available for qpf array([ 2.,  8., 14., 20., 26., 32., 38., 44., 50., 56., 62., 68., 74.])
+# but why pull it at 22:00 when can pull it at 00:00?
