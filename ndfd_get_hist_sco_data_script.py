@@ -196,7 +196,7 @@ def tidy_sco_ndfd_data(ndfd_data, datetime_uct_str, ndfd_var):
                     var_data_pd_raw = var_06hr_pd_raw.append([var_12hr_pd_raw, var_24hr_pd_raw, var_48hr_pd_raw, var_72hr_pd_raw]).reset_index()
             
                     # rename columns
-                    var_data_pd = var_data_pd_raw.rename(columns={"level_0": "y_index", "level_1": "x_index", 0: "qpf_value_kmperm2"})
+                    var_data_pd = var_data_pd_raw.rename(columns={"level_0": "y_index", "level_1": "x_index", 0: "qpf_value_kgperm2"})
                     
                                     # save x and y data
                     x_data = ndfd_data['x'][:] # x coordinate
@@ -446,7 +446,7 @@ ndfd_sco_server_url = 'https://tds.climate.ncsu.edu/thredds/dodsC/nws/ndfd/'
 pop12_data_pd = pandas.DataFrame(columns = ['index', 'y_index', 'x_index', 'pop12_value_perc', 'valid_period_hrs',
        'longitude_km', 'latitude_km', 'time', 'time_uct_long', 'time_uct',
        'time_nyc_long', 'time_nyc'])
-qpf_data_pd = pandas.DataFrame(columns = ['index', 'y_index', 'x_index', 'qpf_value_kmperm2', 'valid_period_hrs',
+qpf_data_pd = pandas.DataFrame(columns = ['index', 'y_index', 'x_index', 'qpf_value_kgperm2', 'valid_period_hrs',
        'longitude_km', 'latitude_km', 'time', 'time_uct_long', 'time_uct',
        'time_nyc_long', 'time_nyc'])
     
