@@ -43,6 +43,9 @@ figure_path <- "/Users/sheila/Documents/bae_shellcast_project/shellcast_analysis
 # exporting ndfd spatial data path
 ndfd_sco_spatial_data_export_path <- "/Users/sheila/Documents/bae_shellcast_project/shellcast_analysis/data/spatial/sheila_generated/ndfd_sco_latest_nc/"
 
+# exporting ndfd tabular data path
+ndfd_sco_tabular_data_export_path <- "/Users/sheila/Documents/bae_shellcast_project/shellcast_analysis/data/tabular/sheila_generated/ndfd_sco_latest_nc/"
+
 # define proj4 string for ndfd data
 ndfd_proj4 = "+proj=lcc +lat_1=25 +lat_2=25 +lat_0=25 +lon_0=-95 +x_0=0 +y_0=0 +a=6371000 +b=6371000 +units=m +no_defs"
 # source: https://spatialreference.org/ref/sr-org/6825/
@@ -109,10 +112,10 @@ ndfd_pop12_data <- ndfd_pop12_data_raw %>%
 
 # initial clean up qpf
 ndfd_qpf_data <- ndfd_qpf_data_raw %>%
-  dplyr::select(x_index, y_index, latitude_km, longitude_km, time_uct, time_nyc, qpf_value_kmperm2, valid_period_hrs) %>%
+  dplyr::select(x_index, y_index, latitude_km, longitude_km, time_uct, time_nyc, qpf_value_kgperm2, valid_period_hrs) %>%
   dplyr::mutate(latitude_m = latitude_km * 1000,
                 longitude_m = longitude_km * 1000,
-                qpf_value_in = qpf_value_kmperm2 * (1/1000) * (100) * (1/2.54)) # convert to inches, density of water is 1000 kg/m3
+                qpf_value_in = qpf_value_kgperm2 * (1/1000) * (100) * (1/2.54)) # convert to m (density of water is 1000 kg/m3) then cm then inches
 
 
 # ---- 6. convert tabular ndfd data to (vector) spatial data ----
@@ -127,7 +130,7 @@ ndfd_pop12_albers <- st_as_sf(ndfd_pop12_data,
 # check pop12 projection
 # st_crs(ndfd_pop12_albers)
 # look good!
-
+ˆ
 # pop12 periods available
 # unique(ndfd_pop12_albers$valid_period_hrs)
 
@@ -243,14 +246,14 @@ ndfd_qpf_raster_3day_nc_albers <- raster::crop(ndfd_qpf_raster_3day_albers, nc_b
 # plot(ndfd_qpf_raster_3day_nc_albers)
 
 # project pop12 to wgs84 toofor 1-day, 2-day, and 3-day forecasts
-ndfd_pop12_raster_1day_nc_wgs84 <- projectRaster(ndfd_pop12_raster_1day_nc_albers, crs = wgs84_proj4)
-ndfd_pop12_raster_2day_nc_wgs84 <- projectRaster(ndfd_pop12_raster_2day_nc_albers, crs = wgs84_proj4)
-ndfd_pop12_raster_3day_nc_wgs84 <- projectRaster(ndfd_pop12_raster_3day_nc_albers, crs = wgs84_proj4)
+# ndfd_pop12_raster_1day_nc_wgs84 <- projectRaster(ndfd_pop12_raster_1day_nc_albers, crs = wgs84_proj4)
+# ndfd_pop12_raster_2day_nc_wgs84 <- projectRaster(ndfd_pop12_raster_2day_nc_albers, crs = wgs84_proj4)
+# ndfd_pop12_raster_3day_nc_wgs84 <- projectRaster(ndfd_pop12_raster_3day_nc_albers, crs = wgs84_proj4)
 
 # project qpf to wgs84 too for 1-day, 2-day, and 3-day forecasts
-ndfd_qpf_raster_1day_nc_wgs84 <- projectRaster(ndfd_qpf_raster_1day_nc_albers, crs = wgs84_proj4)
-ndfd_qpf_raster_2day_nc_wgs84 <- projectRaster(ndfd_qpf_raster_2day_nc_albers, crs = wgs84_proj4)
-ndfd_qpf_raster_3day_nc_wgs84 <- projectRaster(ndfd_qpf_raster_3day_nc_albers, crs = wgs84_proj4)
+# ndfd_qpf_raster_1day_nc_wgs84 <- projectRaster(ndfd_qpf_raster_1day_nc_albers, crs = wgs84_proj4)
+# ndfd_qpf_raster_2day_nc_wgs84 <- projectRaster(ndfd_qpf_raster_2day_nc_albers, crs = wgs84_proj4)
+# ndfd_qpf_raster_3day_nc_wgs84 <- projectRaster(ndfd_qpf_raster_3day_nc_albers, crs = wgs84_proj4)
 
 # plot to check
 # plot(ndfd_pop12_raster_1day_nc_wgs84)
@@ -303,14 +306,14 @@ ndfd_qpf_raster_3day_sga_albers <- raster::crop(ndfd_qpf_raster_3day_albers, sga
 # plot(ndfd_qpf_raster_3day_sga_albers)
 
 # project pop12 to wgs84 toofor 1-day, 2-day, and 3-day forecasts
-ndfd_pop12_raster_1day_sga_wgs84 <- projectRaster(ndfd_pop12_raster_1day_sga_albers, crs = wgs84_proj4)
-ndfd_pop12_raster_2day_sga_wgs84 <- projectRaster(ndfd_pop12_raster_2day_sga_albers, crs = wgs84_proj4)
-ndfd_pop12_raster_3day_sga_wgs84 <- projectRaster(ndfd_pop12_raster_3day_sga_albers, crs = wgs84_proj4)
+# ndfd_pop12_raster_1day_sga_wgs84 <- projectRaster(ndfd_pop12_raster_1day_sga_albers, crs = wgs84_proj4)
+# ndfd_pop12_raster_2day_sga_wgs84 <- projectRaster(ndfd_pop12_raster_2day_sga_albers, crs = wgs84_proj4)
+# ndfd_pop12_raster_3day_sga_wgs84 <- projectRaster(ndfd_pop12_raster_3day_sga_albers, crs = wgs84_proj4)
 
 # project qpf to wgs84 too for 1-day, 2-day, and 3-day forecasts
-ndfd_qpf_raster_1day_sga_wgs84 <- projectRaster(ndfd_qpf_raster_1day_sga_albers, crs = wgs84_proj4)
-ndfd_qpf_raster_2day_sga_wgs84 <- projectRaster(ndfd_qpf_raster_2day_sga_albers, crs = wgs84_proj4)
-ndfd_qpf_raster_3day_sga_wgs84 <- projectRaster(ndfd_qpf_raster_3day_sga_albers, crs = wgs84_proj4)
+# ndfd_qpf_raster_1day_sga_wgs84 <- projectRaster(ndfd_qpf_raster_1day_sga_albers, crs = wgs84_proj4)
+# ndfd_qpf_raster_2day_sga_wgs84 <- projectRaster(ndfd_qpf_raster_2day_sga_albers, crs = wgs84_proj4)
+# ndfd_qpf_raster_3day_sga_wgs84 <- projectRaster(ndfd_qpf_raster_3day_sga_albers, crs = wgs84_proj4)
 
 # plot to check
 # plot(ndfd_pop12_raster_1day_sga_wgs84)
@@ -363,14 +366,11 @@ ndfd_qpf_raster_3day_cmu_albers <-  raster::mask(ndfd_qpf_raster_3day_sga_albers
 # plot(ndfd_qpf_raster_3day_cmu_albers)
 
 # project pop12 to wgs84 too for 1-day, 2-day, and 3-day forecasts
-ndfd_pop12_raster_1day_cmu_wgs84 <- projectRaster(ndfd_pop12_raster_1day_cmu_albers, crs = wgs84_proj4)
-ndfd_pop12_raster_2day_cmu_wgs84 <- projectRaster(ndfd_pop12_raster_2day_cmu_albers, crs = wgs84_proj4)
-ndfd_pop12_raster_3day_cmu_wgs84 <- projectRaster(ndfd_pop12_raster_3day_cmu_albers, crs = wgs84_proj4)
+# ndfd_pop12_raster_1day_cmu_wgs84 <- projectRaster(ndfd_pop12_raster_1day_cmu_albers, crs = wgs84_proj4)
+# ndfd_pop12_raster_2day_cmu_wgs84 <- projectRaster(ndfd_pop12_raster_2day_cmu_albers, crs = wgs84_proj4)
+# ndfd_pop12_raster_3day_cmu_wgs84 <- projectRaster(ndfd_pop12_raster_3day_cmu_albers, crs = wgs84_proj4)
 
 # project qpf to wgs84 too for 1-day, 2-day, and 3-day forecasts
-ndfd_qpf_raster_1day_cmu_wgs84 <- projectRaster(ndfd_qpf_raster_1day_cmu_albers, crs = wgs84_proj4)
-ndfd_qpf_raster_2day_cmu_wgs84 <- projectRaster(ndfd_qpf_raster_2day_cmu_albers, crs = wgs84_proj4)
-ndfd_qpf_raster_3day_cmu_wgs84 <- projectRaster(ndfd_qpf_raster_3day_cmu_albers, crs = wgs84_proj4)
 
 # plot to check
 # plot(ndfd_pop12_raster_1day_cmu_wgs84)
@@ -406,10 +406,10 @@ ndfd_qpf_raster_3day_cmu_wgs84 <- projectRaster(ndfd_qpf_raster_3day_cmu_albers,
 # ---- 14. area weighted calcs for each cmu ----
 
 # need to do this for pop12 and qpf and for 1-day, 2-day, and 3-day forecasts
-cmu_calcs_data <- data.frame(row_num = as.numeric(),
+ndfd_cmu_calcs_data <- data.frame(row_num = as.numeric(),
                              HA_CLASS = as.character(),
                              rainfall_thresh_in = as.numeric(),
-                             date = as.character(),
+                             datetime_uct = as.character(),
                              valid_period_hrs = as.numeric(),
                              pop12_perc = as.numeric(),
                              qpf_in = as.numeric(),
@@ -501,7 +501,7 @@ for (i in 1:length(valid_period_list)) {
     temp_qpf_cmu_raster_area_sum_m2 = sum(temp_qpf_cmu_df_short$cmu_raster_area_m2)
     
     # use total area to calculated weighted value
-    temp_qpf_cmu_df_fin <- temp_qpf_cmu_df_short %>%
+    temp_pop12_cmu_df_fin <- temp_pop12_cmu_df_short %>%
       dplyr::mutate(cmu_raster_area_perc = cmu_raster_area_m2/temp_pop12_cmu_raster_area_sum_m2,
                     raster_value_wtd = cmu_raster_area_perc * raster_value)
     temp_qpf_cmu_df_fin <- temp_qpf_cmu_df_short %>%
@@ -509,24 +509,24 @@ for (i in 1:length(valid_period_list)) {
                     raster_value_wtd = cmu_raster_area_perc * raster_value)
     
     # sum weighted values to get result
-    temp_cmu_pop12_result <- round(sum(temp_pop12_cmu_df_short$raster_value_wtd), 2)
-    temp_cmu_qpf_result <- round(sum(temp_qpf_cmu_df_short$raster_value_wtd), 4)
+    temp_cmu_pop12_result <- round(sum(temp_pop12_cmu_df_fin$raster_value_wtd), 2)
+    temp_cmu_qpf_result <- round(sum(temp_qpf_cmu_df_fin$raster_value_wtd), 2)
     
     # calculate probability of closure
     temp_cmu_prob_close_result <- round((temp_cmu_pop12_result * exp(-temp_cmu_rain_in/temp_cmu_qpf_result)), 1) # from equation 1 in proposal
     
     # save data
-    temp_cmu_calcs_data <- data.frame(row_num = row_num,
-                                      HA_CLASS = temp_cmu_name,
-                                      rainfall_thresh_in = temp_cmu_rain_in,
-                                      date = latest_uct_str,
-                                      valid_period_hrs = temp_valid_period,
-                                      pop12_perc = temp_cmu_pop12_result,
-                                      qpf_in = temp_cmu_qpf_result,
-                                      prob_close_perc = temp_cmu_prob_close_result)
+    temp_ndfd_cmu_calcs_data <- data.frame(row_num = row_num,
+                                           HA_CLASS = temp_cmu_name,
+                                           rainfall_thresh_in = temp_cmu_rain_in,
+                                           datetime_uct = latest_uct_str,
+                                           valid_period_hrs = temp_valid_period,
+                                           pop12_perc = temp_cmu_pop12_result,
+                                           qpf_in = temp_cmu_qpf_result,
+                                           prob_close_perc = temp_cmu_prob_close_result)
     
     # bind results
-    cmu_calcs_data <-  rbind(cmu_calcs_data, temp_cmu_calcs_data)
+    ndfd_cmu_calcs_data <-  rbind(ndfd_cmu_calcs_data, temp_ndfd_cmu_calcs_data)
     
     # next row
     print(paste0("finished row: ", row_num))
@@ -539,8 +539,57 @@ stop_time <- now()
 
 # time to run loop
 stop_time - start_time
-# Time difference of 3.465513 mins
+# Time difference of 3.33797 mins
 
+
+# ---- 15. export calcs ----
+# export calcs for 1-day, 2-day, and 3-day forecasts
+write_csv(ndfd_cmu_calcs_data, paste0(ndfd_sco_tabular_data_export_path, "ndfd_cmu_calcs_", latest_uct_str, ".csv"))
+
+
+# ----- text exp function ----
+my_pop12 <- 50
+my_qpf <- seq(from = 0, to = 5, by = 0.5)
+my_thresh <- 4
+my_pc <- my_pop12 * exp(-my_thresh/my_qpf)
+plot(my_pc ~ my_qpf)
+
+
+# ----- find values for leases ----
+lease_data_path <- "/Users/sheila/Documents/bae_shellcast_project/shellcast_analysis/data/spatial/sheila_generated/"
+lease_data <- st_read(paste0(lease_data_path, "leases_select_albers.shp"))
+
+lease_cmu_data <- cmu_bounds_albers %>%
+  st_intersection(lease_data) %>%
+  dplyr::select(lease_id, HA_CLASS) %>%
+  st_drop_geometry() %>%
+  dplyr::left_join(ndfd_cmu_calcs_data, by = "HA_CLASS")
+
+lease_cmu_prob_data <- lease_cmu_data %>%
+  dplyr::mutate(day = ymd(str_sub(datetime_uct, start = 1, end = 8))) %>%
+  dplyr::select(lease_id, day, valid_period_hrs, prob_close_perc) %>%
+  dplyr::mutate(valid_period = case_when(valid_period_hrs == 24 ~ "prob_1d_perc",
+                                         valid_period_hrs == 48 ~ "prob_2d_perc",
+                                         valid_period_hrs == 72 ~ "prob_3d_perc")) %>%
+  dplyr::select(lease_id, day, valid_period, prob_close_perc) %>%
+  tidyr::pivot_wider(id_cols = c(lease_id, day), names_from = valid_period, values_from = prob_close_perc)
+
+
+lease_cmu_rain_data <- lease_cmu_data %>%
+  dplyr::mutate(day = ymd(str_sub(datetime_uct, start = 1, end = 8))) %>%
+  dplyr::select(lease_id, day, valid_period_hrs, qpf_in) %>%
+  dplyr::mutate(valid_period = case_when(valid_period_hrs == 24 ~ "rain_forecast_1d_in",
+                                         valid_period_hrs == 48 ~ "rain_forecast_2d_in",
+                                         valid_period_hrs == 72 ~ "rain_forecast_3d_in")) %>%
+  dplyr::select(lease_id, valid_period, qpf_in) %>%
+  tidyr::pivot_wider(id_cols = lease_id, names_from = valid_period, values_from = qpf_in)
+
+
+lease_cmu_data_fin <- lease_cmu_prob_data %>%
+  dplyr::left_join(lease_cmu_rain_data, by = "lease_id") %>%
+  dplyr::select(lease_id, day, rain_forecast_1d_in:rain_forecast_3d_in, prob_1d_perc:prob_3d_perc)
+
+write_csv(lease_cmu_data_fin, paste0(ndfd_sco_tabular_data_export_path, "ndfd_lease_calcs_", latest_uct_str, ".csv"))
 
 # ---- ??? wrangle data ----
 
