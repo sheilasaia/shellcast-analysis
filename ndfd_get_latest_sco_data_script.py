@@ -222,7 +222,7 @@ def tidy_sco_ndfd_data(ndfd_data, datetime_uct_str, ndfd_var):
                     var_data_pd_raw = var_24hr_pd_raw.append([var_48hr_pd_raw, var_72hr_pd_raw]).reset_index()
 
                     # rename columns
-                    var_data_pd = var_data_pd_raw.rename(columns={"level_0": "y_index", "level_1": "x_index", 0: "qpf_value_kmperm2"})
+                    var_data_pd = var_data_pd_raw.rename(columns={"level_0": "y_index", "level_1": "x_index", 0: "qpf_value_kgperm2"})
 
                                     # save x and y data
                     x_data = ndfd_data['x'][:] # x coordinate
@@ -472,7 +472,7 @@ data_available_pd = pandas.DataFrame(columns = ['datetime_uct_str', 'status'])
 
 # get time now
 #datetime_now_nyc = pandas.to_datetime(dt.datetime.now(), format = "%Y-%m-%d %H:%M").tz_localize(tz = "America/New_York") # this is local time (ET) but server is in UCT
-datetime_now_nyc = pandas.to_datetime("2020-05-28 07:00", format = "%Y-%m-%d %H:%M").tz_localize(tz = "America/New_York") # force midnight uct grab at 8am et
+datetime_now_nyc = pandas.to_datetime("2020-06-17 07:00", format = "%Y-%m-%d %H:%M").tz_localize(tz = "America/New_York") # force midnight uct grab at 8am et
 #datetime_now_nyc = pandas.to_datetime("2020-05-28 15:00", format = "%Y-%m-%d %H:%M").tz_localize(tz = "America/New_York") # force noon uct grab at 8pm et
 
 # convert to uct
@@ -554,6 +554,7 @@ else:
 
     # print status
     print("did not append " + temp_datetime_uct_str + " data")
+
 
 # %% testing times
 base_server_url = 'https://tds.climate.ncsu.edu/thredds/dodsC/nws/ndfd/'
