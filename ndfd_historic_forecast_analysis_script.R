@@ -17,6 +17,7 @@
 # TODO need to loop through all 1095 days
 # TODO use here package for path stuff
 # TODO figure out how to get raster to be 5000x5000 right now if i set this when i make the empty raster, the final raster has lines in it
+# TODO fix header for qpf (units are kgperm2)
 
 
 # ---- load libraries ----
@@ -79,10 +80,10 @@ ndfd_pop12_data <- ndfd_pop12_data_raw %>%
 # ---- wrangle qpf tabular data ----
 # initial clean up
 ndfd_qpf_data <- ndfd_qpf_data_raw %>%
-  dplyr::select(x_index, y_index, latitude_km, longitude_km, time_uct, time_nyc, qpf_value_kmperm2, valid_period_hrs) %>%
+  dplyr::select(x_index, y_index, latitude_km, longitude_km, time_uct, time_nyc, qpf_value_kgperm2, valid_period_hrs) %>%
   dplyr::mutate(latitude_m = latitude_km * 1000,
          longitude_m = longitude_km * 1000,
-         qpf_value_in = qpf_value_kmperm2 * (1/1000) * (100) * (1/2.54)) # convert to inches, density of water is 1000 kg/m3
+         qpf_value_in = qpf_value_kgperm2 * (1/1000) * (100) * (1/2.54)) # convert to inches, density of water is 1000 kg/m3
 
 
 # ---- convert tabular data to spatial data ----
