@@ -14,7 +14,7 @@
 # to do list
 
 # TODO create function for section 10
-# TODO export nc wide data not just coast
+# TODO why are some values over 100% for pop12 calcs?
 
 # ---- 1. load libraries ----
 library(tidyverse)
@@ -24,7 +24,7 @@ library(raster)
 library(lubridate)
 
 
-# ---- 2. defining paths and projections
+# ---- 2. defining paths and projections ----
 # path to data
 ndfd_data_path <- "/Users/sheila/Documents/bae_shellcast_project/shellcast_analysis/data/tabular/ndfd_sco_latest_raw/"
 
@@ -36,7 +36,6 @@ sga_data_path <- "/Users/sheila/Documents/bae_shellcast_project/shellcast_analys
 
 # cmu data path
 cmu_data_path <- "/Users/sheila/Documents/bae_shellcast_project/shellcast_analysis/data/spatial/sheila_generated/cmu_bounds/"
-
 
 # figure export path
 figure_path <- "/Users/sheila/Documents/bae_shellcast_project/shellcast_analysis/results/figures/"
@@ -484,22 +483,30 @@ for (i in 1:length(valid_period_list)) {
     temp_qpf_cmu_df <- data.frame(perc_cover = temp_qpf_cmu_raster_perc_cover@data@values, raster_value = temp_qpf_raster@data@values)
     
     # keep only dataframe entries with values and do spatial averaging calcs
-    # pop12
     temp_pop12_cmu_df_short <- temp_pop12_cmu_df %>%
       na.omit() %>%
-      mutate(flag = if_else(perc_cover == 0, "no_data", "data")) %>%
-      filter(flag == "data") %>%
+      dplyr::mutate(flag = if_else(perc_cover == 0, "no_data", "data")) %>%
+      dplyr::filter(flag == "data") %>%
       dplyr::select(-flag) %>%
-      mutate(perc_cover_rescale = (perc_cover*(temp_pop12_raster_res[1]*temp_pop12_raster_res[2]))/temp_cmu_area,
-             raster_value_wtd = perc_cover_rescale * raster_value)
-    # qpf
+      dplyr::mutate(cmu_raster_area_m2 = perc_cover*(temp_qpf_raster_res[1]*temp_qpf_raster_res[2]))
     temp_qpf_cmu_df_short <- temp_qpf_cmu_df %>%
       na.omit() %>%
-      mutate(flag = if_else(perc_cover == 0, "no_data", "data")) %>%
-      filter(flag == "data") %>%
+      dplyr::mutate(flag = if_else(perc_cover == 0, "no_data", "data")) %>%
+      dplyr::filter(flag == "data") %>%
       dplyr::select(-flag) %>%
-      mutate(perc_cover_rescale = (perc_cover*(temp_qpf_raster_res[1]*temp_qpf_raster_res[2]))/temp_cmu_area,
-             raster_value_wtd = perc_cover_rescale * raster_value)
+      dplyr::mutate(cmu_raster_area_m2 = perc_cover*(temp_qpf_raster_res[1]*temp_qpf_raster_res[2]))
+    
+    # find total area of raster represented
+    temp_pop12_cmu_raster_area_sum_m2 = sum(temp_qpf_cmu_df_short$cmu_raster_area_m2)
+    temp_qpf_cmu_raster_area_sum_m2 = sum(temp_qpf_cmu_df_short$cmu_raster_area_m2)
+    
+    # use total area to calculated weighted value
+    temp_qpf_cmu_df_fin <- temp_qpf_cmu_df_short %>%
+      dplyr::mutate(cmu_raster_area_perc = cmu_raster_area_m2/temp_pop12_cmu_raster_area_sum_m2,
+                    raster_value_wtd = cmu_raster_area_perc * raster_value)
+    temp_qpf_cmu_df_fin <- temp_qpf_cmu_df_short %>%
+      dplyr::mutate(cmu_raster_area_perc = cmu_raster_area_m2/temp_qpf_cmu_raster_area_sum_m2,
+                    raster_value_wtd = cmu_raster_area_perc * raster_value)
     
     # sum weighted values to get result
     temp_cmu_pop12_result <- round(sum(temp_pop12_cmu_df_short$raster_value_wtd), 2)
@@ -532,7 +539,7 @@ stop_time <- now()
 
 # time to run loop
 stop_time - start_time
-# Time difference of 3.245098 mins
+# Time difference of 3.465513 mins
 
 
 # ---- ??? wrangle data ----
