@@ -13,8 +13,10 @@
 # ---- to do ----
 # to do list
 
-# TODO create function for section 10
-# TODO why are some values over 100% for pop12 calcs?
+# TODO remove df to raster code (part of 4 and 5-9)
+# TODO check 6nr QPF vs 12 POP12 in calcs
+
+
 
 # ---- 1. load libraries ----
 library(tidyverse)
