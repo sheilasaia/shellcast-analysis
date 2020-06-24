@@ -9,9 +9,24 @@
 # ---- notes ----
 # notes:
  
+# raw data column metadata
+# ProductNbr - lease id
+# Assoc_ID - another id associated with the lease id (we don't need to worry about this)
+# Owner - owner/business name
+# Bus_Agent - business agent
+# County - NC county that the business is in
+# WB_Name - waterbody name (this is not the same as growing area)
+# Type_ - lease type (bottom, water column, franchise, research sanctuary, proposed, terminated)
+# Status - status of the lease (there are lots of different unique values here)
+# A_Granted - acres granted in the lease
+# EffectiveD - date approved/renewed
+# Expiration - expiration date of lease
+# Term_Date - termination date (i.e., date when the leased area was terminated)
+
 
 # ---- to do ----
 # to do list
+
 
 
 # ---- 1. load libraries ----
@@ -23,7 +38,7 @@ library(geojsonsf)
 
 # ---- 2. defining paths and projections ----
 # path to data
-ndfd_data_path <- "/Users/sheila/Documents/bae_shellcast_project/shellcast_analysis/data/spatial/sheila_generated/"
+ndfd_data_path <- "/Users/sheila/Documents/bae_shellcast_project/shellcast_analysis/data/spatial/sheila_generated/lease_bounds/"
 
 lease_data_raw <- st_read(paste0(ndfd_data_path, "leases_select.shp"))
 
@@ -65,3 +80,11 @@ lease_data_centroid_wgs94_geojson <- sf_geojson(lease_data_centroid_wgs94, atomi
 
 #write_file(lease_data_wgs94_geojson, paste0(ndfd_data_path, "leases_select_wgs84.geojson"))
 #write_file(lease_data_centroid_wgs94_geojson, paste0(ndfd_data_path, "leases_select_centroid_wgs84.geojson"))
+
+
+# raw lease data to wgs84 and geojson (for stanton)
+# lease_data_raw_wgs84 <- lease_data_raw %>%
+#   st_transform(crs = wgs84_epsg)
+# st_crs(lease_data_raw_wgs84)
+# lease_data_raw_wgs84_geojson <- sf_geojson(lease_data_raw_wgs84, atomise = FALSE, simplify = TRUE, digits = 5)
+# write_file(lease_data_raw_wgs84_geojson, paste0(ndfd_data_path, "leases_select_raw_wgs84.geojson"))
