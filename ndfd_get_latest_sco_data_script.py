@@ -66,7 +66,7 @@ data_available_pd = pandas.DataFrame(columns = ['datetime_uct_str', 'status'])
 
 # get time now
 datetime_now_nyc = pandas.to_datetime(dt.datetime.now(), format = "%Y-%m-%d %H:%M").tz_localize(tz = "America/New_York") # this is local time (ET) but server is in UCT
-# datetime_now_nyc = pandas.to_datetime("2020-06-22 07:00", format = "%Y-%m-%d %H:%M").tz_localize(tz = "America/New_York") # force midnight uct grab at 8am et
+# datetime_now_nyc = pandas.to_datetime("2020-06-16 07:00", format = "%Y-%m-%d %H:%M").tz_localize(tz = "America/New_York") # force midnight uct grab at 8am et
 
 # convert to uct
 datetime_now_uct = datetime_now_nyc.tz_convert(tz = "UCT")
