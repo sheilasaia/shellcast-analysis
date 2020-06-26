@@ -95,6 +95,9 @@ ndfd_qpf_raster_3day_albers <- raster::raster(paste0(ndfd_data_path, "qpf_", lat
 # sga buffer bounds vector
 sga_buffer_albers <- st_read(paste0(sga_data_path, "sga_bounds_buffer_albers.shp"))
 
+# sga data vector
+sga_bounds_albers <- st_read(paste0(sga_data_path, "sga_bounds_simple_albers.shp"))
+
 # cmu buffer bounds vector
 cmu_buffer_albers <- st_read(paste0(cmu_data_path, "cmu_bounds_buffer_albers.shp"))
 
@@ -162,15 +165,6 @@ ndfd_qpf_raster_3day_sga_albers <- raster::crop(ndfd_qpf_raster_3day_albers, sga
 # writeRaster(ndfd_qpf_raster_3day_sga_wgs84, paste0(ndfd_sco_spatial_data_export_path, "qpf_", latest_uct_str, "_72hr_sga_wgs84.tif"), overwrite = TRUE)
 
 
-# ---- 7. calculate min and max ndfd sga raster values ----
-
-
-
-# ---- 8. export min and max ndfd sga raster values ----
-
-
-
-
 # ---- 7. crop sga raster ndfd data to cmu bounds ----
 # 1-day pop12 for 1-day, 2-day, and 3-day forecasts
 ndfd_pop12_raster_1day_cmu_albers <- raster::mask(ndfd_pop12_raster_1day_sga_albers, mask = cmu_buffer_albers)
@@ -231,33 +225,33 @@ ndfd_qpf_raster_3day_cmu_albers <-  raster::mask(ndfd_qpf_raster_3day_sga_albers
 # writeRaster(ndfd_qpf_raster_3day_cmu_wgs84, paste0(ndfd_sco_spatial_data_export_path, "qpf_", latest_uct_str, "_72hr_cmu_wgs84.tif"), overwrite = TRUE)
 
 
-# ---- 9. area weighted calcs for each cmu ----
+# ---- 9. area weighted cmu calcs ----
 # need to do this for pop12 and qpf and for 1-day, 2-day, and 3-day forecasts
 ndfd_cmu_calcs_data <- data.frame(row_num = as.numeric(),
-                             HA_CLASS = as.character(),
-                             rainfall_thresh_in = as.numeric(),
-                             datetime_uct = as.character(),
-                             valid_period_hrs = as.numeric(),
-                             pop12_perc = as.numeric(),
-                             qpf_in = as.numeric(),
-                             prob_close_perc = as.numeric())
+                                  HA_CLASS = as.character(),
+                                  rainfall_thresh_in = as.numeric(),
+                                  datetime_uct = as.character(),
+                                  valid_period_hrs = as.numeric(),
+                                  pop12_perc = as.numeric(),
+                                  qpf_in = as.numeric(),
+                                  prob_close_perc = as.numeric())
 
 # valid period list
 valid_period_list <- c(24, 48, 72)
 
 # rasters lists
-pop12_raster_list <- c(ndfd_pop12_raster_1day_cmu_albers, ndfd_pop12_raster_2day_cmu_albers, ndfd_pop12_raster_3day_cmu_albers)
-qpf_raster_list <- c(ndfd_qpf_raster_1day_cmu_albers, ndfd_qpf_raster_2day_cmu_albers, ndfd_qpf_raster_3day_cmu_albers)
+pop12_cmu_raster_list <- c(ndfd_pop12_raster_1day_cmu_albers, ndfd_pop12_raster_2day_cmu_albers, ndfd_pop12_raster_3day_cmu_albers)
+qpf_cmu_raster_list <- c(ndfd_qpf_raster_1day_cmu_albers, ndfd_qpf_raster_2day_cmu_albers, ndfd_qpf_raster_3day_cmu_albers)
 
 # number of cmu's
 num_cmu <- length(cmu_bounds_albers$HA_CLASS)
 
 # row dimentions
-num_row <- length(valid_period_list)*num_cmu
+num_cmu_row <- length(valid_period_list)*num_cmu
 
 # set row number and start iterator
-row_num_list <- seq(1:num_row)
-row_num <- row_num_list[1]
+cmu_row_num_list <- seq(1:num_cmu_row)
+cmu_row_num <- cmu_row_num_list[1]
 
 # record start time
 start_time <- now()
@@ -270,8 +264,8 @@ for (i in 1:length(valid_period_list)) {
     temp_valid_period <- valid_period_list[i]
     
     # save raster
-    temp_pop12_raster <- pop12_raster_list[i][[1]]
-    temp_qpf_raster <- qpf_raster_list[i][[1]]
+    temp_pop12_raster <- pop12_cmu_raster_list[i][[1]]
+    temp_qpf_raster <- qpf_cmu_raster_list[i][[1]]
     
     # save raster resolution
     temp_pop12_raster_res <- raster::res(temp_pop12_raster)
@@ -343,7 +337,7 @@ for (i in 1:length(valid_period_list)) {
     temp_cmu_prob_close_result <- round((temp_cmu_pop12_result * exp(-temp_cmu_rain_in/temp_cmu_qpf_result)), 1) # from equation 1 in proposal
     
     # save data
-    temp_ndfd_cmu_calcs_data <- data.frame(row_num = row_num,
+    temp_ndfd_cmu_calcs_data <- data.frame(row_num = cmu_row_num,
                                            HA_CLASS = temp_cmu_name,
                                            rainfall_thresh_in = temp_cmu_rain_in,
                                            datetime_uct = latest_uct_str,
@@ -356,8 +350,8 @@ for (i in 1:length(valid_period_list)) {
     ndfd_cmu_calcs_data <-  rbind(ndfd_cmu_calcs_data, temp_ndfd_cmu_calcs_data)
     
     # next row
-    print(paste0("finished row: ", row_num))
-    row_num <- row_num + 1
+    print(paste0("finished row: ", cmu_row_num))
+    cmu_row_num <- cmu_row_num + 1
   }
 }
 
@@ -369,9 +363,160 @@ stop_time - start_time
 # Time difference of 3.33797 mins
 
 
-# ---- 10. export calcs ----
+# ---- 10. export area weighted cmu calcs ----
 # export calcs for 1-day, 2-day, and 3-day forecasts
 write_csv(ndfd_cmu_calcs_data, paste0(ndfd_sco_tabular_data_export_path, "ndfd_cmu_calcs_", latest_uct_str, ".csv"))
+
+
+# ---- 11. calculate min and max ndfd sga raster values ----
+
+
+
+
+
+# need to do this for pop12 and qpf and for 1-day, 2-day, and 3-day forecasts
+ndfd_sga_calcs_data <- data.frame(row_num = as.numeric(),
+                                  grow_area = as.character(),
+                                  datetime_uct = as.character(),
+                                  valid_period_hrs = as.numeric(),
+                                  prob_close_min_perc = as.numeric(),
+                                  prob_close_max_perc = as.numeric())
+
+# valid period list
+valid_period_list <- c(24, 48, 72)
+
+# rasters lists
+pop12_sga_raster_list <- c(ndfd_pop12_raster_1day_sga_albers, ndfd_pop12_raster_2day_sga_albers, ndfd_pop12_raster_3day_sga_albers)
+qpf_sga_raster_list <- c(ndfd_qpf_raster_1day_sga_albers, ndfd_qpf_raster_2day_sga_albers, ndfd_qpf_raster_3day_sga_albers)
+
+# number of cmu's
+num_sga <- length(sga_bounds_albers$grow_area)
+
+# row dimentions
+num_sga_row <- length(valid_period_list)*num_sga
+
+# set row number and start iterator
+sga_row_num_list <- seq(1:num_sga_row)
+sga_row_num <- sga_row_num_list[1]
+
+# record start time
+start_time <- now()
+
+# for loop
+# i denotes valid period (3 values), j denotes grow_area (73 values)
+for (i in 1:length(valid_period_list)) {
+  for (j in 1:num_sga) {
+    # valid period
+    temp_valid_period <- valid_period_list[i]
+    
+    # save raster
+    temp_pop12_raster <- pop12_sga_raster_list[i][[1]]
+    temp_qpf_raster <- qpf_sga_raster_list[i][[1]]
+    
+    # save raster resolution
+    temp_pop12_raster_res <- raster::res(temp_pop12_raster)
+    temp_qpf_raster_res <- raster::res(temp_qpf_raster)
+    
+    # save sga name
+    temp_sga_name <- as.character(sga_bounds_albers$grow_area[j])
+    
+    # save cmu rainfall threshold value
+    temp_cmu_rain_in <- as.numeric(cmu_bounds_albers$rain_in[j])
+    
+    # get cmu bounds vector
+    temp_cmu_bounds <- cmu_bounds_albers %>%
+      dplyr::filter(HA_CLASS == temp_cmu_name)
+    
+    # cmu bounds area
+    temp_cmu_area <- as.numeric(st_area(temp_cmu_bounds)) # in m^2
+    
+    # make this a funciton that takes ndfd raster and temp_cmu_bounds and gives area wtd raster result
+    temp_pop12_cmu_raster_empty <- raster()
+    raster::extent(temp_pop12_cmu_raster_empty) <- raster::extent(temp_pop12_raster)
+    raster::res(temp_pop12_cmu_raster_empty) <- raster::res(temp_pop12_raster)
+    raster::crs(temp_pop12_cmu_raster_empty) <- raster::crs(temp_pop12_raster)
+    
+    temp_qpf_cmu_raster_empty <- raster()
+    raster::extent(temp_qpf_cmu_raster_empty) <- raster::extent(temp_qpf_raster)
+    raster::res(temp_qpf_cmu_raster_empty) <- raster::res(temp_qpf_raster)
+    raster::crs(temp_qpf_cmu_raster_empty) <- raster::crs(temp_qpf_raster)
+    
+    # calculate percent cover cmu over raster
+    temp_pop12_cmu_raster_perc_cover <- raster::rasterize(temp_cmu_bounds, temp_pop12_cmu_raster_empty, getCover = TRUE) # getCover give percentage of the cover of the cmu boundary in the raster
+    temp_qpf_cmu_raster_perc_cover <- raster::rasterize(temp_cmu_bounds, temp_qpf_cmu_raster_empty, getCover = TRUE) # getCover give percentage of the cover of the cmu boundary in the raster
+    
+    # convert raster to dataframe
+    temp_pop12_cmu_df <- data.frame(perc_cover = temp_pop12_cmu_raster_perc_cover@data@values, raster_value = temp_pop12_raster@data@values)
+    temp_qpf_cmu_df <- data.frame(perc_cover = temp_qpf_cmu_raster_perc_cover@data@values, raster_value = temp_qpf_raster@data@values)
+    
+    # keep only dataframe entries with values and do spatial averaging calcs
+    temp_pop12_cmu_df_short <- temp_pop12_cmu_df %>%
+      na.omit() %>%
+      dplyr::mutate(flag = if_else(perc_cover == 0, "no_data", "data")) %>%
+      dplyr::filter(flag == "data") %>%
+      dplyr::select(-flag) %>%
+      dplyr::mutate(cmu_raster_area_m2 = perc_cover*(temp_qpf_raster_res[1]*temp_qpf_raster_res[2]))
+    temp_qpf_cmu_df_short <- temp_qpf_cmu_df %>%
+      na.omit() %>%
+      dplyr::mutate(flag = if_else(perc_cover == 0, "no_data", "data")) %>%
+      dplyr::filter(flag == "data") %>%
+      dplyr::select(-flag) %>%
+      dplyr::mutate(cmu_raster_area_m2 = perc_cover*(temp_qpf_raster_res[1]*temp_qpf_raster_res[2]))
+    
+    # find total area of raster represented
+    temp_pop12_cmu_raster_area_sum_m2 = sum(temp_qpf_cmu_df_short$cmu_raster_area_m2)
+    temp_qpf_cmu_raster_area_sum_m2 = sum(temp_qpf_cmu_df_short$cmu_raster_area_m2)
+    
+    # use total area to calculated weighted value
+    temp_pop12_cmu_df_fin <- temp_pop12_cmu_df_short %>%
+      dplyr::mutate(cmu_raster_area_perc = cmu_raster_area_m2/temp_pop12_cmu_raster_area_sum_m2,
+                    raster_value_wtd = cmu_raster_area_perc * raster_value)
+    temp_qpf_cmu_df_fin <- temp_qpf_cmu_df_short %>%
+      dplyr::mutate(cmu_raster_area_perc = cmu_raster_area_m2/temp_qpf_cmu_raster_area_sum_m2,
+                    raster_value_wtd = cmu_raster_area_perc * raster_value)
+    
+    # sum weighted values to get result
+    temp_cmu_pop12_result <- round(sum(temp_pop12_cmu_df_fin$raster_value_wtd), 2)
+    temp_cmu_qpf_result <- round(sum(temp_qpf_cmu_df_fin$raster_value_wtd), 2)
+    
+    # calculate probability of closure
+    temp_cmu_prob_close_result <- round((temp_cmu_pop12_result * exp(-temp_cmu_rain_in/temp_cmu_qpf_result)), 1) # from equation 1 in proposal
+    
+    # save data
+    temp_ndfd_cmu_calcs_data <- data.frame(row_num = cmu_row_num,
+                                           HA_CLASS = temp_cmu_name,
+                                           rainfall_thresh_in = temp_cmu_rain_in,
+                                           datetime_uct = latest_uct_str,
+                                           valid_period_hrs = temp_valid_period,
+                                           pop12_perc = temp_cmu_pop12_result,
+                                           qpf_in = temp_cmu_qpf_result,
+                                           prob_close_perc = temp_cmu_prob_close_result)
+    
+    # bind results
+    ndfd_cmu_calcs_data <-  rbind(ndfd_cmu_calcs_data, temp_ndfd_cmu_calcs_data)
+    
+    # next row
+    print(paste0("finished row: ", cmu_row_num))
+    cmu_row_num <- cmu_row_num + 1
+  }
+}
+
+# print time now
+stop_time <- now()
+
+# time to run loop
+stop_time - start_time
+# Time difference of 3.33797 mins
+
+
+
+
+# ---- 12. export min and max ndfd sga raster values ----
+
+
+
+
+
 
 
 # ----- text exp function ----
