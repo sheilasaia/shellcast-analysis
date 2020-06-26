@@ -15,6 +15,7 @@
 
 # TODO work on code to pull latest files from list of all files
 # TODO pull most recent lease data
+# TODO tidy up data export folders
 
 
 # ---- 1. load libraries ----
