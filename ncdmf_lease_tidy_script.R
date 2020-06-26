@@ -16,17 +16,20 @@
 # Bus_Agent - business agent
 # County - NC county that the business is in
 # WB_Name - waterbody name (this is not the same as growing area)
-# Type_ - lease type (bottom, water column, franchise, research sanctuary, proposed, terminated)
+# Type_ - lease type (bottom - rent rights to bottom, water column, franchise - own rights to bottom, research sanctuary, proposed, terminated)
 # Status - status of the lease (there are lots of different unique values here)
 # A_Granted - acres granted in the lease
 # EffectiveD - date approved/renewed
-# Expiration - expiration date of lease
+# Expiration - expiration date of lease, 9996 and 9994 indicate a franchise - these have no expiration dates and if part or all is not in a cmu then can't harvest from it
 # Term_Date - termination date (i.e., date when the leased area was terminated)
 
 
 # ---- to do ----
 # to do list
 
+# TODO get this read to run in real-time
+# TODO pull most recent lease data
+# TODO clean up script
 
 
 # ---- 1. load libraries ----
@@ -40,7 +43,8 @@ library(geojsonsf)
 # path to data
 ndfd_data_path <- "/Users/sheila/Documents/bae_shellcast_project/shellcast_analysis/data/spatial/sheila_generated/lease_bounds/"
 
-lease_data_raw <- st_read(paste0(ndfd_data_path, "leases_select.shp"))
+# lease_data_raw <- st_read(paste0(ndfd_data_path, "leases_select.shp"))
+lease_data_raw <- st_read(paste0(ndfd_data_path, "leases_20200602.shp"))
 
 st_crs(lease_data_raw) # epsg = 2264
 
@@ -67,9 +71,6 @@ st_crs(lease_data_albers)
 lease_data_centroid_albers <- lease_data_albers %>%
   st_centroid()
 
-#st_write(lease_data_albers, paste0(ndfd_data_path, "leases_select_albers.shp"))
-#st_write(lease_data_centroid_albers, paste0(ndfd_data_path, "leases_select_centroid_albers.shp"))
-
 lease_data_wgs94 <- lease_data_albers %>%
   st_transform(crs = wgs84_epsg)
 lease_data_centroid_wgs94 <- lease_data_centroid_albers %>%
@@ -77,6 +78,14 @@ lease_data_centroid_wgs94 <- lease_data_centroid_albers %>%
 
 lease_data_wgs94_geojson <- sf_geojson(lease_data_wgs94, atomise = FALSE, simplify = TRUE, digits = 5)
 lease_data_centroid_wgs94_geojson <- sf_geojson(lease_data_centroid_wgs94, atomise = FALSE, simplify = TRUE, digits = 5)
+
+# ---- export ----
+
+# st_write(lease_data_albers, paste0(ndfd_data_path, "leases_albers_20200602.shp"))
+# st_write(lease_data_centroid_albers, paste0(ndfd_data_path, "leases_centroids_albers_20200602.shp"))
+
+# st_write(lease_data_albers, paste0(ndfd_data_path, "leases_select_albers.shp"))
+# st_write(lease_data_centroid_albers, paste0(ndfd_data_path, "leases_select_centroid_albers.shp"))
 
 #write_file(lease_data_wgs94_geojson, paste0(ndfd_data_path, "leases_select_wgs84.geojson"))
 #write_file(lease_data_centroid_wgs94_geojson, paste0(ndfd_data_path, "leases_select_centroid_wgs84.geojson"))
