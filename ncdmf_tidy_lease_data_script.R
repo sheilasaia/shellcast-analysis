@@ -30,6 +30,7 @@
 # TODO get this read to run in real-time
 # TODO pull most recent lease data
 # TODO clean up script
+# TODO need to export file with lease_id and geo bounds for database
 
 
 # ---- 1. load libraries ----
