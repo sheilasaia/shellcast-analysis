@@ -1,6 +1,6 @@
 # ---- script header ----
-# script name: ndfd_latest_df_to_raster_script.R
-# purpose of script: converts raw ndfd dataframes to raster data for downstream forecast analysis
+# script name: ndfd_convert_df_to_raster_script.R
+# purpose of script: converts latest raw ndfd dataframes to raster data for downstream forecast analysis
 # author: sheila saia
 # date created: 20200622
 # email: ssaia@ncsu.edu
@@ -24,13 +24,13 @@ library(lubridate)
 
 # ---- 2. defining paths and projections ----
 # path to data
-ndfd_data_path <- "/Users/sheila/Documents/bae_shellcast_project/shellcast_analysis/data/tabular/ndfd_sco_latest_raw/"
+ndfd_data_path <- "/Users/sheila/Documents/bae_shellcast_project/shellcast_analysis/data/web_app/tabular/ndfd_sco_data_raw/"
 
 # nc buffer data path
-nc_data_path <- "/Users/sheila/Documents/bae_shellcast_project/shellcast_analysis/data/spatial/sheila_generated/region_state_bounds/"
+nc_bounds_buffer_path <- "/Users/sheila/Documents/bae_shellcast_project/shellcast_analysis/data/web_app/spatial/sheila_generated/region_state_bounds/"
 
 # exporting ndfd raster spatial data path
-ndfd_sco_spatial_data_export_path <- "/Users/sheila/Documents/bae_shellcast_project/shellcast_analysis/data/spatial/sheila_generated/ndfd_sco_latest/"
+ndfd_sco_spatial_data_export_path <- "/Users/sheila/Documents/bae_shellcast_project/shellcast_analysis/data/web_app/spatial/sheila_generated/ndfd_sco_data/"
 
 # define proj4 string for ndfd data
 ndfd_proj4 = "+proj=lcc +lat_1=25 +lat_2=25 +lat_0=25 +lon_0=-95 +x_0=0 +y_0=0 +a=6371000 +b=6371000 +units=m +no_defs"
@@ -46,7 +46,7 @@ wgs84_proj4 <- "+proj=longlat +datum=WGS84 +no_defs"
 
 
 # ---- 3. pull latest ndfd file name ----
-# list files in ndfd_sco_latest_raw
+# list files in ndfd_sco_data_raw
 ndfd_files <- list.files(ndfd_data_path, pattern = "pop12_*") # if there is a pop12 dataset there's a qpf dataset
 # ndfd_files <- c(ndfd_files, "pop12_2020061500.csv") # to test with multiple
 ndfd_file_dates <- gsub("pop12_", "", gsub(".csv", "", ndfd_files))
@@ -76,7 +76,7 @@ ndfd_qpf_data_raw <- read_csv(paste0(ndfd_data_path, ndfd_latest_qpf_file_name),
                               col_types = list(col_double(), col_double(), col_double(), col_double(), col_double(), col_double(), col_double(),
                                                col_character(), col_character(), col_character(), col_character(), col_character()))
 # nc buffer bounds vector
-nc_buffer_albers <- st_read(paste0(nc_data_path, "nc_bounds_10kmbuf_albers.shp"))
+nc_buffer_albers <- st_read(paste0(nc_bounds_buffer_path, "nc_bounds_10kmbuf_albers.shp"))
 
 
 # ---- 5. wrangle ndfd tabular data ----
