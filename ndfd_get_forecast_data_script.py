@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 # ---- script header ----
-script name: ndfd_get_latest_sco_data_script.py
+script name: ndfd_get_forecast_data_script.py
 purpose of script: This script grabs latest National Digital Forecast Dataset (NDFD) data from the NC State Climate Office (SCO) TDS server, reformats it, and stores it in a local directory.
 author: sheila saia
 email: ssaia@ncsu.edu
@@ -22,7 +22,7 @@ to see the nc sco catalog website: https://tds.climate.ncsu.edu/thredds/catalog/
 
 # %% to do list
 
-# TODO this need to run everyday at 7am ET
+# TODO this need to run everyday at 5am ET
 
 
 # %% load libraries
@@ -38,7 +38,7 @@ from csv import writer
 # %% set paths
 
 # define data directory path (for export)
-data_dir = "/Users/sheila/Documents/bae_shellcast_project/shellcast_analysis/data/tabular/ndfd_sco_latest_raw/"
+data_dir = "/Users/sheila/Documents/bae_shellcast_project/shellcast_analysis/data/web_app/tabular/ndfd_sco_data_raw/"
 
 # define function directory path
 functions_dir = "/Users/sheila/Documents/github/shellcast-analysis/functions/"
