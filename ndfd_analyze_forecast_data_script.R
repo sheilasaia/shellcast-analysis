@@ -1,5 +1,5 @@
 # ---- script header ----
-# script name: ndfd_forecast_analysis_script.R
+# script name: ndfd_analyze_forecast_data_script.R
 # purpose of script: takes raw ndfd tabular data and calculates probability of closure
 # author: sheila saia 
 # date created: 20200525
@@ -15,7 +15,6 @@
 
 # TODO work on code to pull latest files from list of all files
 # TODO pull most recent lease data
-# TODO tidy up data export folders
 
 
 # ---- 1. load libraries ----
@@ -28,28 +27,28 @@ library(lubridate)
 
 # ---- 2. define paths and projections ----
 # path to data
-ndfd_data_path <- "/Users/sheila/Documents/bae_shellcast_project/shellcast_analysis/data/spatial/sheila_generated/ndfd_sco_latest/"
+ndfd_data_path <- "/Users/sheila/Documents/bae_shellcast_project/shellcast_analysis/data/web_app/spatial/sheila_generated/ndfd_sco_data/"
 
 # sga buffer data path
-sga_data_path <- "/Users/sheila/Documents/bae_shellcast_project/shellcast_analysis/data/spatial/sheila_generated/sga_bounds/"
+sga_data_path <- "/Users/sheila/Documents/bae_shellcast_project/shellcast_analysis/data/web_app/spatial/sheila_generated/sga_bounds/"
 
 # cmu data path
-cmu_data_path <- "/Users/sheila/Documents/bae_shellcast_project/shellcast_analysis/data/spatial/sheila_generated/cmu_bounds/"
+cmu_data_path <- "/Users/sheila/Documents/bae_shellcast_project/shellcast_analysis/data/web_app/spatial/sheila_generated/cmu_bounds/"
 
 # lease data path
-lease_data_path <- "/Users/sheila/Documents/bae_shellcast_project/shellcast_analysis/data/spatial/sheila_generated/lease_bounds/"
+lease_data_path <- "/Users/sheila/Documents/bae_shellcast_project/shellcast_analysis/data/web_app/spatial/sheila_generated/lease_bounds/"
 
 # rainfall threshold path
-rainfall_thresh_path <- "/Users/sheila/Documents/bae_shellcast_project/shellcast_analysis/data/tabular/sheila_generated/ncdmf_rainfall_thresholds/"
+rainfall_thresh_path <- "/Users/sheila/Documents/bae_shellcast_project/shellcast_analysis/data/web_app/tabular/sheila_generated/ncdmf_rainfall_thresholds/"
 
 # figure export path
-figure_path <- "/Users/sheila/Documents/bae_shellcast_project/shellcast_analysis/results/figures/"
+# figure_path <- "/Users/sheila/Documents/bae_shellcast_project/shellcast_analysis/results/figures/"
 
 # exporting ndfd spatial data path
-ndfd_sco_spatial_data_export_path <- "/Users/sheila/Documents/bae_shellcast_project/shellcast_analysis/data/spatial/sheila_generated/ndfd_sco_latest/"
+ndfd_sco_spatial_data_export_path <- "/Users/sheila/Documents/bae_shellcast_project/shellcast_analysis/data/web_app/spatial/sheila_generated/ndfd_sco_data/"
 
 # exporting ndfd tabular data path
-ndfd_sco_tabular_data_export_path <- "/Users/sheila/Documents/bae_shellcast_project/shellcast_analysis/data/tabular/sheila_generated/ndfd_sco_latest/"
+ndfd_sco_tabular_data_export_path <- "/Users/sheila/Documents/bae_shellcast_project/shellcast_analysis/data/web_app/tabular/sheila_generated/ndfd_sco_data/"
 
 # define proj4 string for ndfd data
 ndfd_proj4 = "+proj=lcc +lat_1=25 +lat_2=25 +lat_0=25 +lon_0=-95 +x_0=0 +y_0=0 +a=6371000 +b=6371000 +units=m +no_defs"
@@ -65,7 +64,7 @@ wgs84_proj4 <- "+proj=longlat +datum=WGS84 +no_defs"
 
 
 # ---- 3. pull latest ndfd file name ----
-# list files in ndfd_sco_latest_raw
+# list files in ndfd_sco_data_raw
 ndfd_files <- list.files(ndfd_data_path, pattern = "pop12_*") # if there is a pop12 dataset there's a qpf dataset
 # ndfd_files <- c(ndfd_files, "pop12_2020061500.csv") # to test with multiple
 
@@ -396,7 +395,7 @@ stop_time - start_time
 
 # ---- 11. export area weighted ndfd cmu calcs ----
 # export calcs for 1-day, 2-day, and 3-day forecasts
-write_csv(ndfd_cmu_calcs_data, paste0(ndfd_sco_tabular_data_export_path, "ndfd_cmu_calcs_", latest_uct_str, ".csv"))
+write_csv(ndfd_cmu_calcs_data, paste0(ndfd_sco_tabular_data_export_path, "cmu_calcs/ndfd_cmu_calcs_", latest_uct_str, ".csv"))
 
 
 # ---- 12. min and max ndfd sga calcs ----
@@ -434,7 +433,7 @@ ndfd_sga_calcs_data <- ndfd_cmu_calcs_join_data %>%
 
 # ---- 13. export min and max ndfd sga calcs ----
 # export sga min and max calcs for 1-day, 2-day, and 3-day forecasts
-write_csv(ndfd_sga_calcs_data,  paste0(ndfd_sco_tabular_data_export_path, "ndfd_sga_calcs_", latest_uct_str, ".csv"))
+write_csv(ndfd_sga_calcs_data,  paste0(ndfd_sco_tabular_data_export_path, "sga_calcs/ndfd_sga_calcs_", latest_uct_str, ".csv"))
 
 
 # ---- 14. select area weighted ndfd cmu calcs for leases ----
@@ -462,7 +461,7 @@ ndfd_lease_calcs_data <- ndfd_lease_calcs_data_raw %>%
 
 
 # ---- 15. export lease data ----
-write_csv(ndfd_lease_calcs_data, paste0(ndfd_sco_tabular_data_export_path, "ndfd_lease_calcs_", latest_uct_str, ".csv"))
+write_csv(ndfd_lease_calcs_data, paste0(ndfd_sco_tabular_data_export_path, "lease_calcs/ndfd_lease_calcs_", latest_uct_str, ".csv"))
 
 
 # ---- 16. save ignored leases ----
