@@ -1,5 +1,5 @@
 # ---- script header ----
-# script name: lease_tidy_script.R
+# script name: ncdmf_tidy_lease_data_script.R
 # purpose of script: tidy up lease data from nc dmf
 # author: sheila saia
 # date created: 20200617
@@ -42,10 +42,10 @@ library(geojsonsf)
 
 # ---- 2. defining paths and projections ----
 # path to data
-ndfd_data_path <- "/Users/sheila/Documents/bae_shellcast_project/shellcast_analysis/data/spatial/sheila_generated/lease_bounds/"
+lease_data_path <- "/Users/sheila/Documents/bae_shellcast_project/shellcast_analysis/data/web_app/spatial/sheila_generated/lease_bounds/"
 
-# lease_data_raw <- st_read(paste0(ndfd_data_path, "leases_select.shp"))
-lease_data_raw <- st_read(paste0(ndfd_data_path, "leases_20200602.shp"))
+# lease_data_raw <- st_read(paste0(lease_data_path, "leases_select.shp"))
+lease_data_raw <- st_read(paste0(lease_data_path, "leases_20200602.shp"))
 
 st_crs(lease_data_raw) # epsg = 2264
 
@@ -82,14 +82,14 @@ lease_data_centroid_wgs94_geojson <- sf_geojson(lease_data_centroid_wgs94, atomi
 
 # ---- export ----
 
-# st_write(lease_data_albers, paste0(ndfd_data_path, "leases_albers_20200602.shp"))
-# st_write(lease_data_centroid_albers, paste0(ndfd_data_path, "leases_centroids_albers_20200602.shp"))
+# st_write(lease_data_albers, paste0(lease_data_path, "leases_albers_20200602.shp"))
+# st_write(lease_data_centroid_albers, paste0(lease_data_path, "leases_centroids_albers_20200602.shp"))
 
-# st_write(lease_data_albers, paste0(ndfd_data_path, "leases_select_albers.shp"))
-# st_write(lease_data_centroid_albers, paste0(ndfd_data_path, "leases_select_centroid_albers.shp"))
+# st_write(lease_data_albers, paste0(lease_data_path, "leases_select_albers.shp"))
+# st_write(lease_data_centroid_albers, paste0(lease_data_path, "leases_select_centroid_albers.shp"))
 
-#write_file(lease_data_wgs94_geojson, paste0(ndfd_data_path, "leases_select_wgs84.geojson"))
-#write_file(lease_data_centroid_wgs94_geojson, paste0(ndfd_data_path, "leases_select_centroid_wgs84.geojson"))
+#write_file(lease_data_wgs94_geojson, paste0(lease_data_path, "leases_select_wgs84.geojson"))
+#write_file(lease_data_centroid_wgs94_geojson, paste0(lease_data_path, "leases_select_centroid_wgs84.geojson"))
 
 
 # raw lease data to wgs84 and geojson (for stanton)
@@ -97,4 +97,4 @@ lease_data_centroid_wgs94_geojson <- sf_geojson(lease_data_centroid_wgs94, atomi
 #   st_transform(crs = wgs84_epsg)
 # st_crs(lease_data_raw_wgs84)
 # lease_data_raw_wgs84_geojson <- sf_geojson(lease_data_raw_wgs84, atomise = FALSE, simplify = TRUE, digits = 5)
-# write_file(lease_data_raw_wgs84_geojson, paste0(ndfd_data_path, "leases_select_raw_wgs84.geojson"))
+# write_file(lease_data_raw_wgs84_geojson, paste0(lease_data_path, "leases_select_raw_wgs84.geojson"))
