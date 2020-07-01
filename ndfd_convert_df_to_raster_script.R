@@ -57,8 +57,8 @@ today_date_uct_str <- strftime(today_date_uct, format = "%Y%m%d%H")
 date_check <- ndfd_file_dates[ndfd_file_dates == today_date_uct_str]
 
 # if statement that if length(date_check) < 1 then don't run this script
-# latest_uct_str <- today_date_uct_str
-latest_uct_str <- "2020061600"
+latest_uct_str <- today_date_uct_str
+# latest_uct_str <- "2020061600"
 
 
 # ---- 4. load data ----
