@@ -12,7 +12,7 @@ date created: 20200427
 notes:
 ndfd catalog website: https://tds.climate.ncsu.edu/thredds/catalog/nws/ndfd/catalog.html
 
-help: 
+help:
 pydap help: https://pydap.readthedocs.io/en/latest/developer_data_model.html
 thredds help (with python code): https://oceanobservatories.org/thredds-quick-start/#python
 to see the nc sco catalog website: https://tds.climate.ncsu.edu/thredds/catalog/nws/ndfd/catalog.html
@@ -65,10 +65,10 @@ ndfd_sco_server_url = 'https://tds.climate.ncsu.edu/thredds/dodsC/nws/ndfd/'
 data_available_pd = pandas.DataFrame(columns = ['datetime_uct_str', 'status'])
 
 # get time now
-datetime_now_nyc = pandas.to_datetime(dt.datetime.now(), format = "%Y-%m-%d %H:%M").tz_localize(tz = "America/New_York") # this is local time (ET) but server is in UCT
+# datetime_now_nyc = pandas.to_datetime(dt.datetime.now(), format = "%Y-%m-%d %H:%M").tz_localize(tz = "America/New_York") # this is local time (ET) but server is in UCT
 
 # if need to hardcode time (because it's after 8am ET), uncomment this
-# datetime_now_nyc = pandas.to_datetime("2020-07-01 07:00", format = "%Y-%m-%d %H:%M").tz_localize(tz = "America/New_York") # force midnight uct grab at 8am et
+datetime_now_nyc = pandas.to_datetime("2020-07-01 07:00", format = "%Y-%m-%d %H:%M").tz_localize(tz = "America/New_York") # force midnight uct grab at 8am et
 
 # convert to uct
 datetime_now_uct = datetime_now_nyc.tz_convert(tz = "UCT")
@@ -76,7 +76,7 @@ datetime_now_uct = datetime_now_nyc.tz_convert(tz = "UCT")
 # datetime_now_uct_str_short = datetime_now_uct.strftime("%Y-%m-%d")
 # datetime_now_uct
 
-# 
+#
 
 # round up to nearest hour in uct
 datetime_now_uct_td = dt.timedelta(hours = datetime_now_uct.hour, minutes = datetime_now_uct.minute, seconds=datetime_now_uct.second, microseconds = datetime_now_uct.microsecond)
@@ -95,7 +95,7 @@ elif (datetime_now_round_uct >= datetime_noontoday_uct) & (datetime_now_round_uc
     temp_datetime_uct_str = datetime_noontoday_uct.strftime("%Y-%m-%d %H:%M")
 
 # temp_datetime_uct_str
-    
+
 #
 
 # get data
@@ -138,7 +138,7 @@ if (len(temp_data) > 0):
         # temp_data_available_pd = pandas.DataFrame({'datetime_uct_str':[temp_datetime_uct_str], 'status':["not_available"]})
         # data_available_pd = data_available_pd.append(temp_data_available_pd, ignore_index = True)
         temp_data_log = [temp_datetime_uct_str, "not_available"]
-        
+
         # export data availability (i.e., append new row to data_log.csv)
         # data_availability_path = data_dir + "data_available_" + temp_datetime_ymdh_str +  ".csv"
         # data_available_pd.to_csv(data_availability_path, index = False)
@@ -153,7 +153,7 @@ else:
     # temp_data_available_pd = pandas.DataFrame({'datetime_uct_str':[temp_datetime_uct_str], 'status':["not_available"]})
     # data_available_pd = data_available_pd.append(temp_data_available_pd, ignore_index = True)
     temp_data_log = [temp_datetime_uct_str, "not_available"]
-    
+
     # export data availability (i.e., append new row to data_log.csv)
     # data_availability_path = data_dir + "data_available_" + temp_datetime_ymdh_str +  ".csv"
     # data_available_pd.to_csv(data_availability_path, index = False)
@@ -162,4 +162,3 @@ else:
 
     # print status
     print("did not append " + temp_datetime_uct_str + " data")
-
