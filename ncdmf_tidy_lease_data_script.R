@@ -30,21 +30,29 @@
 # TODO get this read to run in real-time
 # TODO error if no no recent lease data available
 # TODO need to export file with lease_id and geo bounds for database
+# TODO save all spatial data outputs to geojson (to reduce storage demands)
 
 
-# ---- 1. load libraries ----
+# ---- 1. install packages ----
+# only need to install these once
+# install.packages("tidyverse")
+# install.packages("sf")
+# install.packages("geojsonsf")
+
+
+# ---- 2. load libraries ----
 library(tidyverse)
 library(sf)
 library(geojsonsf)
 # library(here)
 
 
-# ---- 2. defining paths and projections ----
+# ---- 3. defining paths and projections ----
 # path to raw data
-lease_raw_data_path <- "/Users/sheila/Documents/bae_shellcast_project/shellcast_analysis/data/web_app/spatial/ncdmf_raw/lease_bounds_raw/"
+lease_raw_data_path <- "/Users/sheila/Documents/bae_shellcast_project/shellcast_analysis/data/web_app_data/spatial/ncdmf_raw/lease_bounds_raw/"
 
 # export path
-lease_export_data_path <- "/Users/sheila/Documents/bae_shellcast_project/shellcast_analysis/data/web_app/spatial/sheila_generated/lease_bounds/"
+lease_export_data_path <- "/Users/sheila/Documents/bae_shellcast_project/shellcast_analysis/data/web_app_data/spatial/generated/lease_bounds/"
 
 # define epsg and proj4 for N. America Albers projection (projecting to this)
 na_albers_proj4 <- "+proj=aea +lat_1=20 +lat_2=60 +lat_0=40 +lon_0=-96 +x_0=0 +y_0=0 +datum=NAD83 +units=m +no_defs"
@@ -55,10 +63,10 @@ wgs84_epsg <- 4326
 wgs84_proj4 <- "+proj=longlat +datum=WGS84 +no_defs"
 
 
-# ---- 3. load in latest least data ----
+# ---- 4. load in latest least data ----
 # list files in lease_bounds_raw
-# lease_files <- list.files(lease_raw_data_path, pattern = "*.shp") # if there is a pop12 dataset there's a qpf dataset
-lease_files <- c(lease_files, "leases_20200401.shp") # to test with multiple
+lease_files <- list.files(lease_raw_data_path, pattern = "*.shp") # if there is a pop12 dataset there's a qpf dataset
+# lease_files <- c(lease_files, "leases_20200401.shp") # to test with multiple
 
 # pull out date strings
 lease_file_dates_str <- gsub("leases_", "", gsub(".shp", "", lease_files))
@@ -87,7 +95,7 @@ lease_data_raw <- st_read(paste0(lease_raw_data_path, "leases_", latest_date_uct
 # st_crs(lease_data_raw) # epsg = 2264
 
 
-# ---- 3. project and tidy up lease data ----
+# ---- 5. project and tidy up lease data ----
 lease_data_albers <- lease_data_raw %>%
   st_transform(crs = na_albers_epsg) %>% # project
   dplyr::select(lease_id = ProductNbr, # tidy
@@ -102,13 +110,13 @@ lease_data_albers <- lease_data_raw %>%
 # st_crs(lease_data_albers)
 
 
-# ---- 4. find centroids of leases ----
+# ---- 6. find centroids of leases ----
 # calculate centroids of leases for map pins
 lease_data_centroid_albers <- lease_data_albers %>%
   st_centroid()
 
 
-# ---- 5. project data ----
+# ---- 7. project data ----
 # project data and centroids to wgs84 projection
 lease_data_wgs94 <- lease_data_albers %>%
   st_transform(crs = wgs84_epsg)
@@ -120,23 +128,22 @@ lease_data_wgs94_geojson <- sf_geojson(lease_data_wgs94, atomise = FALSE, simpli
 lease_data_centroid_wgs94_geojson <- sf_geojson(lease_data_centroid_wgs94, atomise = FALSE, simplify = TRUE, digits = 5)
 
 
-# ---- 6. export data ----
+# ---- 8. export data ----
 # export data as shape file for record keeping
-st_write(lease_data_albers, paste0(lease_export_data_path, "leases_albers_", latest_date_uct_str, ".shp"))
-st_write(lease_data_centroid_albers, paste0(lease_export_data_path, "leases_centroids_albers_", latest_date_uct_str, ".shp"))
+st_write(lease_data_albers, paste0(lease_export_data_path, "leases_albers/leases_albers_", latest_date_uct_str, ".shp"))
+st_write(lease_data_centroid_albers, paste0(lease_export_data_path, "leases_centroids_albers/leases_centroids_albers_", latest_date_uct_str, ".shp"))
 
+# export data as geojson for web app
+write_file(lease_data_wgs94_geojson, paste0(lease_export_data_path, "leases_wgs84/leases_wgs84_", latest_date_uct_str, ".geojson"))
+write_file(lease_data_centroid_wgs94_geojson, paste0(lease_export_data_path, "leases_centroids_wgs84/leases_centroid_wgs84_", latest_date_uct_str, ".geojson"))
+
+
+# ---- 9. extra code ----
 # select leases (ignore in production)
 # st_write(lease_data_albers, paste0(lease_export_data_path, "leases_select_albers.shp"))
 # st_write(lease_data_centroid_albers, paste0(lease_export_data_path, "leases_select_centroid_albers.shp"))
-
-# export data as geojson for web app
-write_file(lease_data_wgs94_geojson, paste0(lease_export_data_path, "leases_wgs84.geojson"))
-write_file(lease_data_centroid_wgs94_geojson, paste0(lease_export_data_path, "leases_centroid_wgs84.geojson"))
-
-# select leases (ignore in production)
 # write_file(lease_data_wgs94_geojson, paste0(lease_export_data_path, "leases_select_wgs84.geojson"))
 # write_file(lease_data_centroid_wgs94_geojson, paste0(lease_export_data_path, "leases_select_centroid_wgs84.geojson"))
-
 
 # raw lease data to wgs84 and geojson (for stanton)
 # lease_data_raw_wgs84 <- lease_data_raw %>%

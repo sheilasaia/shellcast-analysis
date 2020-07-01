@@ -14,23 +14,33 @@
 # to do list
 
 # TODO finish date_check if statement
+# TODO fix latest load in
 
-# ---- 1. load libraries ----
+
+# ---- 1. install packages ----
+# only need to install these once
+# install.packages("tidyverse")
+# install.packages("raster")
+# install.packages("sf")
+# install.packages("lubridate")
+
+
+# ---- 2. load packages ----
 library(tidyverse)
 library(raster)
 library(sf)
 library(lubridate)
 
 
-# ---- 2. defining paths and projections ----
+# ---- 3. defining paths and projections ----
 # path to data
-ndfd_data_path <- "/Users/sheila/Documents/bae_shellcast_project/shellcast_analysis/data/web_app/tabular/ndfd_sco_data_raw/"
+ndfd_data_path <- "/Users/sheila/Documents/bae_shellcast_project/shellcast_analysis/data/web_app_data/tabular/ndfd_sco_data_raw/"
 
 # nc buffer data path
-nc_bounds_buffer_path <- "/Users/sheila/Documents/bae_shellcast_project/shellcast_analysis/data/web_app/spatial/sheila_generated/region_state_bounds/"
+nc_bounds_buffer_path <- "/Users/sheila/Documents/bae_shellcast_project/shellcast_analysis/data/web_app_data/spatial/generated/region_state_bounds/"
 
 # exporting ndfd raster spatial data path
-ndfd_sco_spatial_data_export_path <- "/Users/sheila/Documents/bae_shellcast_project/shellcast_analysis/data/web_app/spatial/sheila_generated/ndfd_sco_data/"
+ndfd_sco_spatial_data_export_path <- "/Users/sheila/Documents/bae_shellcast_project/shellcast_analysis/data/web_app_data/spatial/generated/ndfd_sco_data/"
 
 # define proj4 string for ndfd data
 ndfd_proj4 = "+proj=lcc +lat_1=25 +lat_2=25 +lat_0=25 +lon_0=-95 +x_0=0 +y_0=0 +a=6371000 +b=6371000 +units=m +no_defs"
@@ -45,10 +55,9 @@ wgs84_epsg <- 4326
 wgs84_proj4 <- "+proj=longlat +datum=WGS84 +no_defs"
 
 
-# ---- 3. pull latest ndfd file name ----
+# ---- 4. pull latest ndfd file name ----
 # list files in ndfd_sco_data_raw
 ndfd_files <- list.files(ndfd_data_path, pattern = "pop12_*") # if there is a pop12 dataset there's a qpf dataset
-# ndfd_files <- c(ndfd_files, "pop12_2020061500.csv") # to test with multiple
 ndfd_file_dates <- gsub("pop12_", "", gsub(".csv", "", ndfd_files))
 today_date_uct <- lubridate::today(tzone = "UCT")
 today_date_uct_str <- strftime(today_date_uct, format = "%Y%m%d%H")
@@ -61,7 +70,7 @@ latest_uct_str <- today_date_uct_str
 # latest_uct_str <- "2020061600"
 
 
-# ---- 4. load data ----
+# ---- 5. load data ----
 # latest ndfd path strings
 ndfd_latest_pop12_file_name <- paste0("pop12_", latest_uct_str, ".csv")
 ndfd_latest_qpf_file_name <- paste0("qpf_", latest_uct_str, ".csv")
@@ -79,7 +88,7 @@ ndfd_qpf_data_raw <- read_csv(paste0(ndfd_data_path, ndfd_latest_qpf_file_name),
 nc_buffer_albers <- st_read(paste0(nc_bounds_buffer_path, "nc_bounds_10kmbuf_albers.shp"))
 
 
-# ---- 5. wrangle ndfd tabular data ----
+# ---- 6. wrangle ndfd tabular data ----
 # initial clean up pop12
 ndfd_pop12_data <- ndfd_pop12_data_raw %>%
   dplyr::select(x_index, y_index, latitude_km, longitude_km, time_uct, time_nyc, pop12_value_perc, valid_period_hrs) %>%
@@ -94,7 +103,7 @@ ndfd_qpf_data <- ndfd_qpf_data_raw %>%
                 qpf_value_in = qpf_value_kgperm2 * (1/1000) * (100) * (1/2.54)) # convert to m (density of water is 1000 kg/m3) then cm then inches
 
 
-# ---- 6. convert tabular ndfd data to (vector) spatial data ----
+# ---- 7. convert tabular ndfd data to (vector) spatial data ----
 # pop12
 # convert pop12 to spatial data
 ndfd_pop12_albers <- st_as_sf(ndfd_pop12_data, 
@@ -150,7 +159,7 @@ ndfd_qpf_albers_3day <- ndfd_qpf_albers %>%
   dplyr::filter(valid_period_hrs == 72)
 
 
-# ---- 7. convert vector ndfd data to raster data ----
+# ---- 8. convert vector ndfd data to raster data ----
 # make empty pop12 raster for 1-day, 2-day, and 3-day forecasts
 ndfd_pop12_grid_1day <- raster(ncol = length(unique(ndfd_pop12_albers_1day$longitude_km)), 
                                nrows = length(unique(ndfd_pop12_albers_1day$latitude_km)), 
@@ -201,7 +210,7 @@ ndfd_qpf_raster_3day_albers <- raster::rasterize(ndfd_qpf_albers_3day, ndfd_qpf_
 # plot(ndfd_qpf_raster_3day_albers)
 
 
-# ---- 8. crop midatlantic raster ndfd data to nc bounds ----
+# ---- 9. crop midatlantic raster ndfd data to nc bounds ----
 # pop12 for 1-day, 2-day, and 3-day forecasts
 ndfd_pop12_raster_1day_nc_albers <- raster::crop(ndfd_pop12_raster_1day_albers, nc_buffer_albers)
 ndfd_pop12_raster_2day_nc_albers <- raster::crop(ndfd_pop12_raster_2day_albers, nc_buffer_albers)
@@ -240,7 +249,7 @@ ndfd_qpf_raster_3day_nc_albers <- raster::crop(ndfd_qpf_raster_3day_albers, nc_b
 # plot(ndfd_qpf_raster_3day_nc_wgs84)
 
 
-# ---- 9. export nc raster ndfd data ----
+# ---- 10. export nc raster ndfd data ----
 # export pop12 rasters for 1-day, 2-day, and 3-day forecasts
 writeRaster(ndfd_pop12_raster_1day_nc_albers, paste0(ndfd_sco_spatial_data_export_path, "pop12_", latest_uct_str, "_24hr_nc_albers.tif"), overwrite = TRUE)
 writeRaster(ndfd_pop12_raster_2day_nc_albers, paste0(ndfd_sco_spatial_data_export_path, "pop12_", latest_uct_str, "_48hr_nc_albers.tif"), overwrite = TRUE)
