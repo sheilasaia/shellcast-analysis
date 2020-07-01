@@ -1,5 +1,5 @@
 # ---- script header ----
-# script name: ncdmf_get_latest_lease_data_script.R
+# script name: ncdmf_get_lease_data_script.R
 # purpose of script:
 # author:
 # date created: 20200626
