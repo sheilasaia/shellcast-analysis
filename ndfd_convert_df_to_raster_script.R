@@ -58,8 +58,14 @@ wgs84_proj4 <- "+proj=longlat +datum=WGS84 +no_defs"
 # ---- 4. pull latest ndfd file name ----
 # list files in ndfd_sco_data_raw
 ndfd_files <- list.files(ndfd_data_path, pattern = "pop12_*") # if there is a pop12 dataset there's a qpf dataset
+
+# grab dates
 ndfd_file_dates <- gsub("pop12_", "", gsub(".csv", "", ndfd_files))
+
+# save todya's date
 today_date_uct <- lubridate::today(tzone = "UCT")
+
+# convert to string for later use
 today_date_uct_str <- strftime(today_date_uct, format = "%Y%m%d%H")
 
 # check that date exists
@@ -67,7 +73,6 @@ date_check <- ndfd_file_dates[ndfd_file_dates == today_date_uct_str]
 
 # if statement that if length(date_check) < 1 then don't run this script
 latest_uct_str <- today_date_uct_str
-# latest_uct_str <- "2020061600"
 
 
 # ---- 5. load data ----
