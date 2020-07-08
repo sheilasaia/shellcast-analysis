@@ -10,6 +10,15 @@
 3. ndfd_analyze_forecast_data_script.R
 
 
+## Running scripts from the UNIX terminal
+
+The code below will generate an output text file with the date of the run (e.g., output_20200708.txt) for each run in the .../tabular/generated/terminal directory.
+
+```
+sh shellcast_daily_analysis.sh > /Users/sheila/Documents/bae_shellcast_project/shellcast_analysis/data/web_app_data/tabular/generated/terminal/output_$(date '+%Y%m%d').txt
+```
+
+
 ## script run order (weekly, when REST API is available)
 
 4. ncdmf_get_lease_data_script.R (when REST API is available)
