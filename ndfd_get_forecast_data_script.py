@@ -37,11 +37,16 @@ from csv import writer
 
 # %% set paths
 
-# base path
-analysis_base_path = "/Users/sheila/Documents/bae_shellcast_project/shellcast_analysis/"
+# data base path
+data_base_path = "/Users/sheila/Documents/bae_shellcast_project/shellcast_analysis/data/web_app_data/"
+
+# analysis base path
+analysis_base_path = "/Users/sheila/Documents/github/shellcast_analysis/"
+
+# keeping analysis and data separate for now!
 
 # define data directory path (for export)
-data_dir = analysis_base_path + "data/tabular/ndfd_sco_data_raw/"
+data_dir = data_base_path + "tabular/ndfd_sco_data_raw/"
 
 # define function directory path
 functions_dir = analysis_base_path + "functions/"
