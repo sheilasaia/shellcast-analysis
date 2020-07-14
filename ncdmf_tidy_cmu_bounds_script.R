@@ -24,13 +24,14 @@ library(sf)
 # ---- 2. set paths and define projections ----
 # set paths
 spatial_data_path <- "/Users/sheila/Documents/bae_shellcast_project/shellcast_analysis/data/spatial/sheila_generated/"
-tabular_data_path <- "/Users/sheila/Documents/bae_shellcast_project/shellcast_analysis/data/tabular/sheila_generated/"
+tabular_data_path <- "/Users/sheila/Documents/bae_shellcast_project/shellcast_analysis/data/tabular/sheila_generated/ncdmf_rainfall_thresholds/"
+
 
 # export path for cmu bounds spatial data
 spatial_data_export_path <- "/Users/sheila/Documents/bae_shellcast_project/shellcast_analysis/data/spatial/sheila_generated/cmu_bounds/"
 
 # export path for rainfall threshold tabular data
-tabular_data_export_path <- "/Users/sheila/Documents/bae_shellcast_project/shellcast_analysis/data/tabular/sheila_generated/"
+tabular_data_export_path <- "/Users/sheila/Documents/bae_shellcast_project/shellcast_analysis/data/tabular/sheila_generated/ncdmf_rainfall_thresholds/"
 
 # figure export path
 figure_path <- "/Users/sheila/Documents/bae_shellcast_project/shellcast_analysis/results/figures/"
@@ -106,8 +107,8 @@ cmu_bounds_wgs84 <- cmu_bounds_albers %>%
 # it checks!
 
 # export data
-st_write(cmu_bounds_albers, paste0(spatial_data_export_path, "cmu_bounds_albers.shp"))
-st_write(cmu_bounds_albers, paste0(spatial_data_export_path, "cmu_bounds_wgs84.shp"))
+st_write(cmu_bounds_albers, paste0(spatial_data_export_path, "cmu_bounds_albers.shp"), append = FALSE)
+st_write(cmu_bounds_albers, paste0(spatial_data_export_path, "cmu_bounds_wgs84.shp"), append = FALSE)
 
 
 # ---- calculate simple buffer around cmu bounds ----
@@ -128,8 +129,8 @@ cmu_bounds_buffer_wgs84 <- cmu_bounds_buffer_albers %>%
   st_transform(crs = wgs84_epsg)
 
 # export
-st_write(cmu_bounds_buffer_albers, paste0(spatial_data_export_path, "cmu_bounds_buffer_albers.shp"))
-st_write(cmu_bounds_buffer_wgs84, paste0(spatial_data_export_path, "cmu_bounds_buffer_wgs84.shp"))
+st_write(cmu_bounds_buffer_albers, paste0(spatial_data_export_path, "cmu_bounds_buffer_albers.shp"), append = FALSE)
+st_write(cmu_bounds_buffer_wgs84, paste0(spatial_data_export_path, "cmu_bounds_buffer_wgs84.shp"), append = FALSE)
 
 
 # ---- 5. simplify rainfall threshhold data ----

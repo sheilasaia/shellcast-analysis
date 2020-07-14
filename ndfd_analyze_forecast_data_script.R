@@ -14,8 +14,8 @@
 # to do list
 
 # TODO include error message/script stopping for no recent data to pull
-# TODO pull most recent lease data
 # TODO save all spatial data outputs to geojson (to reduce storage demands)
+# TODO (wishlist) use here package
 
 
 # ---- 1. install packages ----
@@ -24,6 +24,7 @@
 # install.packages("raster")
 # install.packages("sf")
 # install.packages("lubridate")
+# install.packages("here")
 
 
 # ---- 2. load libraries ----
@@ -34,36 +35,38 @@ library(lubridate)
 # library(here)
 
 
-# ---- 3. define paths and projections ----
-# base path
-data_base_path = "/Users/sheila/Documents/bae_shellcast_project/shellcast_analysis/data/web_app_data/" 
+# ---- 3. define base paths ----
+# base path to data
+# data_base_path = "...analysis/data/" # set this and uncomment!
+data_base_path = "/Users/sheila/Documents/bae_shellcast_project/shellcast_analysis/web_app_data/" 
 
-## path to data
-ndfd_data_path <- paste0(data_base_path, "spatial/generated/ndfd_sco_data/")
 
-# sga buffer data path
-sga_data_path <- paste0(data_base_path, "spatial/generated/sga_bounds/")
+# ---- 4. use base paths and define projections ----
+# path to ndfd spatial inputs
+ndfd_spatial_data_input_path <- paste0(data_base_path, "spatial/outputs/ndfd_sco_data/")
 
-# cmu data path
-cmu_data_path <- paste0(data_base_path, "spatial/generated/cmu_bounds/")
+# path to sga buffer spatial inputs
+sga_spatial_data_input_path <- paste0(data_base_path, "spatial/inputs/ncdmf_data/sga_bounds/")
 
-# lease data path
-lease_data_path <- paste0(data_base_path, "spatial/generated/lease_bounds/leases_albers/")
+# path to cmu bounds spatial inputs
+cmu_spatial_data_input_path <- paste0(data_base_path, "spatial/inputs/ncdmf_data/cmu_bounds/")
 
-# lease ignored data path (for keeping track of ignored leases)
-lease_ignored_data_path <- paste0(data_base_path, "spatial/generated/lease_bounds/leases_ignored/")
+# path to lease bounds spatial inputs
+lease_spatial_data_input_path <- paste0(data_base_path, "spatial/outputs/ncdmf_data/lease_bounds_albers/")
 
-# rainfall threshold path
-rainfall_thresh_path <- paste0(data_base_path, "tabular/generated/ncdmf_rainfall_thresholds/")
+# path to rainfall threshold tabular inputs
+rainfall_thresh_tabular_data_input_path <- paste0(data_base_path, "tabular/inputs/ncdmf_rainfall_thresholds/")
 
-# figure export path
-# figure_path <- "/Users/sheila/Documents/bae_shellcast_project/shellcast_analysis/results/figures/"
 
-# exporting ndfd spatial data path
-ndfd_sco_spatial_data_export_path <- paste0(data_base_path, "spatial/generated/ndfd_sco_data/")
+# path to ndfd spatial outputs
+ndfd_spatial_data_output_path <- paste0(data_base_path, "spatial/outputs/ndfd_sco_data/")
 
-# exporting ndfd tabular data path
-ndfd_sco_tabular_data_export_path <- paste0(data_base_path, "tabular/generated/ndfd_sco_data/")
+# path to ndfd tabular outputs
+ndfd_tabular_data_output_path <- paste0(data_base_path, "tabular/outputs/ndfd_sco_data/")
+
+# path to ignored lease bounds spatial outputs
+lease_spatial_data_output_path <- paste0(data_base_path, "spatial/outputs/ncdmf_data/lease_bounds_ignored_albers/")
+
 
 # define proj4 string for ndfd data
 ndfd_proj4 = "+proj=lcc +lat_1=25 +lat_2=25 +lat_0=25 +lon_0=-95 +x_0=0 +y_0=0 +a=6371000 +b=6371000 +units=m +no_defs"
@@ -78,15 +81,15 @@ wgs84_epsg <- 4326
 wgs84_proj4 <- "+proj=longlat +datum=WGS84 +no_defs"
 
 
-# ---- 4. pull latest ndfd file name ----
+# ---- 5. pull latest ndfd file name ----
 # list files in ndfd_sco_data_raw
-ndfd_files <- list.files(ndfd_data_path, pattern = "pop12_*") # if there is a pop12 dataset there's a qpf dataset
+ndfd_files <- list.files(ndfd_spatial_data_input_path, pattern = "pop12_*") # if there is a pop12 dataset there's a qpf dataset
 
 # find files with 24 hr data (just need one time period to check dates)
 ndfd_files_sel <- ndfd_files[stringr::str_detect(ndfd_files, "_24hr_")]
 
 # pull out dates
-ndfd_file_dates_str <- gsub("pop12_", "", gsub("00_24hr_nc_albers.tif", "", ndfd_files_sel))
+ndfd_file_dates_str <- gsub("pop12_", "", gsub("00_24hr_nc_albers.tif", "", ndfd_files_sel)) # assumes midnight
 
 # convert date strings to dates
 ndfd_file_dates <- lubridate::ymd(ndfd_file_dates_str)
@@ -101,14 +104,14 @@ diff_ndfd_file_dates <- as.numeric(today_date_uct - ndfd_file_dates) # in days
 latest_ndfd_date_uct <- ndfd_file_dates[diff_ndfd_file_dates == min(diff_ndfd_file_dates)]
 
 # convert to string
-latest_ndfd_date_uct_str <- strftime(latest_ndfd_date_uct, format = "%Y%m%d%H")
+latest_ndfd_date_uct_str <- strftime(latest_ndfd_date_uct, format = "%Y%m%d%H") # assumes midnight
 
 # need some sort of error statement if this is more than a certain number of days then don't run script
 
 
-# ---- 5. pull latest lease file name ----
+# ---- 6. pull latest lease file name ----
 # list files in lease_bounds
-lease_files <- list.files(lease_data_path, pattern = "*.shp") # if there is a pop12 dataset there's a qpf dataset
+lease_files <- list.files(lease_spatial_data_input_path, pattern = "*.shp") # if there is a pop12 dataset there's a qpf dataset
 # lease_files <- c(lease_files, "leases_20200401.shp") # to test with multiple
 
 # pull out date strings
@@ -132,12 +135,12 @@ latest_lease_date_uct_str <- strftime(latest_lease_date_uct, format = "%Y%m%d")
 # need some sort of error statement if this is more than a certain number of days then don't run script
 
 
-# ---- 6. load data ----
+# ---- 7. load other data ----
 # raster data
 # latest pop12 ndfd data raster for 1-day, 2-day, and 3-day forecasts
-ndfd_pop12_raster_1day_albers <- raster::raster(paste0(ndfd_data_path, "pop12_", latest_ndfd_date_uct_str, "_24hr_nc_albers.tif"))
-ndfd_pop12_raster_2day_albers <- raster::raster(paste0(ndfd_data_path, "pop12_", latest_ndfd_date_uct_str, "_48hr_nc_albers.tif"))
-ndfd_pop12_raster_3day_albers <- raster::raster(paste0(ndfd_data_path, "pop12_", latest_ndfd_date_uct_str, "_72hr_nc_albers.tif"))
+ndfd_pop12_raster_1day_albers <- raster::raster(paste0(ndfd_spatial_data_input_path, "pop12_", latest_ndfd_date_uct_str, "_24hr_nc_albers.tif"))
+ndfd_pop12_raster_2day_albers <- raster::raster(paste0(ndfd_spatial_data_input_path, "pop12_", latest_ndfd_date_uct_str, "_48hr_nc_albers.tif"))
+ndfd_pop12_raster_3day_albers <- raster::raster(paste0(ndfd_spatial_data_input_path, "pop12_", latest_ndfd_date_uct_str, "_72hr_nc_albers.tif"))
 
 # check projection
 # crs(ndfd_pop12_raster_1day_albers)
@@ -145,9 +148,9 @@ ndfd_pop12_raster_3day_albers <- raster::raster(paste0(ndfd_data_path, "pop12_",
 # crs(ndfd_pop12_raster_3day_albers)
 
 # latest qpf ndfd data raster for 1-day, 2-day, and 3-day forecasts
-ndfd_qpf_raster_1day_albers <- raster::raster(paste0(ndfd_data_path, "qpf_", latest_ndfd_date_uct_str, "_24hr_nc_albers.tif"))
-ndfd_qpf_raster_2day_albers <- raster::raster(paste0(ndfd_data_path, "qpf_", latest_ndfd_date_uct_str, "_48hr_nc_albers.tif"))
-ndfd_qpf_raster_3day_albers <- raster::raster(paste0(ndfd_data_path, "qpf_", latest_ndfd_date_uct_str, "_72hr_nc_albers.tif"))
+ndfd_qpf_raster_1day_albers <- raster::raster(paste0(ndfd_spatial_data_input_path, "qpf_", latest_ndfd_date_uct_str, "_24hr_nc_albers.tif"))
+ndfd_qpf_raster_2day_albers <- raster::raster(paste0(ndfd_spatial_data_input_path, "qpf_", latest_ndfd_date_uct_str, "_48hr_nc_albers.tif"))
+ndfd_qpf_raster_3day_albers <- raster::raster(paste0(ndfd_spatial_data_input_path, "qpf_", latest_ndfd_date_uct_str, "_72hr_nc_albers.tif"))
 
 # check projection
 # crs(ndfd_qpf_raster_1day_albers)
@@ -156,24 +159,24 @@ ndfd_qpf_raster_3day_albers <- raster::raster(paste0(ndfd_data_path, "qpf_", lat
 
 # vector data
 # sga buffer bounds
-sga_buffer_albers <- st_read(paste0(sga_data_path, "sga_bounds_buffer_albers.shp"))  %>%
+sga_buffer_albers <- st_read(paste0(sga_spatial_data_input_path, "sga_bounds_buffer_albers.shp"))  %>%
   st_set_crs(na_albers_epsg) # epsg code wasn't assigned if this code isn't included
 
 # sga data
-sga_bounds_albers <- st_read(paste0(sga_data_path, "sga_bounds_simple_albers.shp"))  %>%
+sga_bounds_albers <- st_read(paste0(sga_spatial_data_input_path, "sga_bounds_simple_albers.shp"))  %>%
   st_set_crs(na_albers_epsg) # epsg code wasn't assigned if this code isn't included
 
 # cmu buffer bounds
-cmu_buffer_albers <- st_read(paste0(cmu_data_path, "cmu_bounds_buffer_albers.shp"))  %>%
+cmu_buffer_albers <- st_read(paste0(cmu_spatial_data_input_path, "cmu_bounds_buffer_albers.shp"))  %>%
   st_set_crs(na_albers_epsg) # epsg code wasn't assigned if this code isn't included
 
 # cmu bounds
-cmu_bounds_albers <- st_read(paste0(cmu_data_path, "cmu_bounds_albers.shp"))  %>%
+cmu_bounds_albers <- st_read(paste0(cmu_spatial_data_input_path, "cmu_bounds_albers.shp"))  %>%
   st_set_crs(na_albers_epsg) # epsg code wasn't assigned if this code isn't included
 
 # lease bounds
 # use latest date to read in most recent data
-lease_data_albers <- st_read(paste0(lease_data_path, "leases_albers_", latest_lease_date_uct_str, ".shp")) %>%
+lease_data_albers <- st_read(paste0(lease_spatial_data_input_path, "leases_albers_", latest_lease_date_uct_str, ".shp")) %>%
   st_set_crs(na_albers_epsg) # epsg code wasn't assigned if this code isn't included
 
 # check crs
@@ -185,10 +188,10 @@ lease_data_albers <- st_read(paste0(lease_data_path, "leases_albers_", latest_le
 
 # tabular data
 # rainfall thresholds
-rainfall_thresh_data <- read_csv(paste0(rainfall_thresh_path, "rainfall_thresholds.csv"))
+rainfall_thresh_data <- read_csv(paste0(rainfall_thresh_tabular_data_input_path, "rainfall_thresholds.csv"))
 
 
-# ---- 7. crop nc raster ndfd data to sga bounds ----
+# ---- 8. crop nc raster ndfd data to sga bounds ----
 # pop12 for 1-day, 2-day, and 3-day forecasts
 ndfd_pop12_raster_1day_sga_albers <- raster::crop(ndfd_pop12_raster_1day_albers, sga_buffer_albers)
 ndfd_pop12_raster_2day_sga_albers <- raster::crop(ndfd_pop12_raster_2day_albers, sga_buffer_albers)
@@ -228,29 +231,29 @@ ndfd_qpf_raster_3day_sga_albers <- raster::crop(ndfd_qpf_raster_3day_albers, sga
 # plot(ndfd_qpf_raster_3day_sga_wgs84)
 
 
-# ---- 8. export sga raster ndfd data ----
+# ---- 9. export sga raster ndfd data ----
 # export pop12 rasters for 1-day, 2-day, and 3-day forecasts
-# writeRaster(ndfd_pop12_raster_1day_sga_albers, paste0(ndfd_sco_spatial_data_export_path, "pop12_", latest_ndfd_date_uct, "_24hr_sga_albers.tif"), overwrite = TRUE)
-# writeRaster(ndfd_pop12_raster_2day_sga_albers, paste0(ndfd_sco_spatial_data_export_path, "pop12_", latest_ndfd_date_uct, "_48hr_sga_albers.tif"), overwrite = TRUE)
-# writeRaster(ndfd_pop12_raster_3day_sga_albers, paste0(ndfd_sco_spatial_data_export_path, "pop12_", latest_ndfd_date_uct, "_78hr_sga_albers.tif"), overwrite = TRUE)
+# writeRaster(ndfd_pop12_raster_1day_sga_albers, paste0(ndfd_spatial_data_output_path, "pop12_", latest_ndfd_date_uct, "_24hr_sga_albers.tif"), overwrite = TRUE)
+# writeRaster(ndfd_pop12_raster_2day_sga_albers, paste0(ndfd_spatial_data_output_path, "pop12_", latest_ndfd_date_uct, "_48hr_sga_albers.tif"), overwrite = TRUE)
+# writeRaster(ndfd_pop12_raster_3day_sga_albers, paste0(ndfd_spatial_data_output_path, "pop12_", latest_ndfd_date_uct, "_78hr_sga_albers.tif"), overwrite = TRUE)
 
 # export qpf rasters for 1-day, 2-day, and 3-day forecasts
-# writeRaster(ndfd_qpf_raster_1day_sga_albers, paste0(ndfd_sco_spatial_data_export_path, "qpf_", latest_ndfd_date_uct, "_24hr_sga_albers.tif"), overwrite = TRUE)
-# writeRaster(ndfd_qpf_raster_2day_sga_albers, paste0(ndfd_sco_spatial_data_export_path, "qpf_", latest_ndfd_date_uct, "_48hr_sga_albers.tif"), overwrite = TRUE)
-# writeRaster(ndfd_qpf_raster_3day_sga_albers, paste0(ndfd_sco_spatial_data_export_path, "qpf_", latest_ndfd_date_uct, "_72hr_sga_albers.tif"), overwrite = TRUE)
+# writeRaster(ndfd_qpf_raster_1day_sga_albers, paste0(ndfd_spatial_data_output_path, "qpf_", latest_ndfd_date_uct, "_24hr_sga_albers.tif"), overwrite = TRUE)
+# writeRaster(ndfd_qpf_raster_2day_sga_albers, paste0(ndfd_spatial_data_output_path, "qpf_", latest_ndfd_date_uct, "_48hr_sga_albers.tif"), overwrite = TRUE)
+# writeRaster(ndfd_qpf_raster_3day_sga_albers, paste0(ndfd_spatial_data_output_path, "qpf_", latest_ndfd_date_uct, "_72hr_sga_albers.tif"), overwrite = TRUE)
 
 # export pop12 rasters as wgs84 too for 1-day, 2-day, and 3-day forecasts
-# writeRaster(ndfd_pop12_raster_1day_sga_wgs84, paste0(ndfd_sco_spatial_data_export_path, "pop12_", latest_ndfd_date_uct, "_24hr_sga_wgs84.tif"), overwrite = TRUE)
-# writeRaster(ndfd_pop12_raster_2day_sga_wgs84, paste0(ndfd_sco_spatial_data_export_path, "pop12_", latest_ndfd_date_uct, "_48hr_sga_wgs84.tif"), overwrite = TRUE)
-# writeRaster(ndfd_pop12_raster_3day_sga_wgs84, paste0(ndfd_sco_spatial_data_export_path, "pop12_", latest_ndfd_date_uct, "_78hr_sga_wgs84.tif"), overwrite = TRUE)
+# writeRaster(ndfd_pop12_raster_1day_sga_wgs84, paste0(ndfd_spatial_data_output_path, "pop12_", latest_ndfd_date_uct, "_24hr_sga_wgs84.tif"), overwrite = TRUE)
+# writeRaster(ndfd_pop12_raster_2day_sga_wgs84, paste0(ndfd_spatial_data_output_path, "pop12_", latest_ndfd_date_uct, "_48hr_sga_wgs84.tif"), overwrite = TRUE)
+# writeRaster(ndfd_pop12_raster_3day_sga_wgs84, paste0(ndfd_spatial_data_output_path, "pop12_", latest_ndfd_date_uct, "_78hr_sga_wgs84.tif"), overwrite = TRUE)
 
 # export qpf rasters as wgs84 too for 1-day, 2-day, and 3-day forecasts
-# writeRaster(ndfd_qpf_raster_1day_sga_wgs84, paste0(ndfd_sco_spatial_data_export_path, "qpf_", latest_ndfd_date_uct, "_24hr_sga_wgs84.tif"), overwrite = TRUE)
-# writeRaster(ndfd_qpf_raster_2day_sga_wgs84, paste0(ndfd_sco_spatial_data_export_path, "qpf_", latest_ndfd_date_uct, "_48hr_sga_wgs84.tif"), overwrite = TRUE)
-# writeRaster(ndfd_qpf_raster_3day_sga_wgs84, paste0(ndfd_sco_spatial_data_export_path, "qpf_", latest_ndfd_date_uct, "_72hr_sga_wgs84.tif"), overwrite = TRUE)
+# writeRaster(ndfd_qpf_raster_1day_sga_wgs84, paste0(ndfd_spatial_data_output_path, "qpf_", latest_ndfd_date_uct, "_24hr_sga_wgs84.tif"), overwrite = TRUE)
+# writeRaster(ndfd_qpf_raster_2day_sga_wgs84, paste0(ndfd_spatial_data_output_path, "qpf_", latest_ndfd_date_uct, "_48hr_sga_wgs84.tif"), overwrite = TRUE)
+# writeRaster(ndfd_qpf_raster_3day_sga_wgs84, paste0(ndfd_spatial_data_output_path, "qpf_", latest_ndfd_date_uct, "_72hr_sga_wgs84.tif"), overwrite = TRUE)
 
 
-# ---- 9. crop sga raster ndfd data to cmu bounds ----
+# ---- 10. crop sga raster ndfd data to cmu bounds ----
 # 1-day pop12 for 1-day, 2-day, and 3-day forecasts
 ndfd_pop12_raster_1day_cmu_albers <- raster::mask(ndfd_pop12_raster_1day_sga_albers, mask = cmu_buffer_albers)
 ndfd_pop12_raster_2day_cmu_albers <- raster::mask(ndfd_pop12_raster_2day_sga_albers, mask = cmu_buffer_albers)
@@ -290,29 +293,29 @@ ndfd_qpf_raster_3day_cmu_albers <-  raster::mask(ndfd_qpf_raster_3day_sga_albers
 # plot(ndfd_qpf_raster_3day_cmu_wgs84)
 
 
-# ---- 10. export cmu raster ndfd data ----
+# ---- 11. export cmu raster ndfd data ----
 # export pop12 rasters for 1-day, 2-day, and 3-day forecasts
-# writeRaster(ndfd_pop12_raster_1day_cmu_albers, paste0(ndfd_sco_spatial_data_export_path, "pop12_", latest_ndfd_date_uct, "_24hr_cmu_albers.tif"), overwrite = TRUE)
-# writeRaster(ndfd_pop12_raster_2day_cmu_albers, paste0(ndfd_sco_spatial_data_export_path, "pop12_", latest_ndfd_date_uct, "_48hr_cmu_albers.tif"), overwrite = TRUE)
-# writeRaster(ndfd_pop12_raster_3day_cmu_albers, paste0(ndfd_sco_spatial_data_export_path, "pop12_", latest_ndfd_date_uct, "_78hr_cmu_albers.tif"), overwrite = TRUE)
+# writeRaster(ndfd_pop12_raster_1day_cmu_albers, paste0(ndfd_spatial_data_output_path, "pop12_", latest_ndfd_date_uct, "_24hr_cmu_albers.tif"), overwrite = TRUE)
+# writeRaster(ndfd_pop12_raster_2day_cmu_albers, paste0(ndfd_spatial_data_output_path, "pop12_", latest_ndfd_date_uct, "_48hr_cmu_albers.tif"), overwrite = TRUE)
+# writeRaster(ndfd_pop12_raster_3day_cmu_albers, paste0(ndfd_spatial_data_output_path, "pop12_", latest_ndfd_date_uct, "_78hr_cmu_albers.tif"), overwrite = TRUE)
 
 # export qpf rasters for 1-day, 2-day, and 3-day forecasts
-# writeRaster(ndfd_qpf_raster_1day_cmu_albers, paste0(ndfd_sco_spatial_data_export_path, "qpf_", latest_ndfd_date_uct, "_24hr_cmu_albers.tif"), overwrite = TRUE)
-# writeRaster(ndfd_qpf_raster_2day_cmu_albers, paste0(ndfd_sco_spatial_data_export_path, "qpf_", latest_ndfd_date_uct, "_48hr_cmu_albers.tif"), overwrite = TRUE)
-# writeRaster(ndfd_qpf_raster_3day_cmu_albers, paste0(ndfd_sco_spatial_data_export_path, "qpf_", latest_ndfd_date_uct, "_72hr_cmu_albers.tif"), overwrite = TRUE)
+# writeRaster(ndfd_qpf_raster_1day_cmu_albers, paste0(ndfd_spatial_data_output_path, "qpf_", latest_ndfd_date_uct, "_24hr_cmu_albers.tif"), overwrite = TRUE)
+# writeRaster(ndfd_qpf_raster_2day_cmu_albers, paste0(ndfd_spatial_data_output_path, "qpf_", latest_ndfd_date_uct, "_48hr_cmu_albers.tif"), overwrite = TRUE)
+# writeRaster(ndfd_qpf_raster_3day_cmu_albers, paste0(ndfd_spatial_data_output_path, "qpf_", latest_ndfd_date_uct, "_72hr_cmu_albers.tif"), overwrite = TRUE)
 
 # export pop12 rasters as wgs84 too for 1-day, 2-day, and 3-day forecasts
-# writeRaster(ndfd_pop12_raster_1day_cmu_wgs84, paste0(ndfd_sco_spatial_data_export_path, "pop12_", latest_ndfd_date_uct, "_24hr_cmu_wgs84.tif"), overwrite = TRUE)
-# writeRaster(ndfd_pop12_raster_2day_cmu_wgs84, paste0(ndfd_sco_spatial_data_export_path, "pop12_", latest_ndfd_date_uct, "_48hr_cmu_wgs84.tif"), overwrite = TRUE)
-# writeRaster(ndfd_pop12_raster_3day_cmu_wgs84, paste0(ndfd_sco_spatial_data_export_path, "pop12_", latest_ndfd_date_uct, "_78hr_cmu_wgs84.tif"), overwrite = TRUE)
+# writeRaster(ndfd_pop12_raster_1day_cmu_wgs84, paste0(ndfd_spatial_data_output_path, "pop12_", latest_ndfd_date_uct, "_24hr_cmu_wgs84.tif"), overwrite = TRUE)
+# writeRaster(ndfd_pop12_raster_2day_cmu_wgs84, paste0(ndfd_spatial_data_output_path, "pop12_", latest_ndfd_date_uct, "_48hr_cmu_wgs84.tif"), overwrite = TRUE)
+# writeRaster(ndfd_pop12_raster_3day_cmu_wgs84, paste0(ndfd_spatial_data_output_path, "pop12_", latest_ndfd_date_uct, "_78hr_cmu_wgs84.tif"), overwrite = TRUE)
 
 # export qpf rasters as wgs84 too for 1-day, 2-day, and 3-day forecasts
-# writeRaster(ndfd_qpf_raster_1day_cmu_wgs84, paste0(ndfd_sco_spatial_data_export_path, "qpf_", latest_ndfd_date_uct, "_24hr_cmu_wgs84.tif"), overwrite = TRUE)
-# writeRaster(ndfd_qpf_raster_2day_cmu_wgs84, paste0(ndfd_sco_spatial_data_export_path, "qpf_", latest_ndfd_date_uct, "_48hr_cmu_wgs84.tif"), overwrite = TRUE)
-# writeRaster(ndfd_qpf_raster_3day_cmu_wgs84, paste0(ndfd_sco_spatial_data_export_path, "qpf_", latest_ndfd_date_uct, "_72hr_cmu_wgs84.tif"), overwrite = TRUE)
+# writeRaster(ndfd_qpf_raster_1day_cmu_wgs84, paste0(ndfd_spatial_data_output_path, "qpf_", latest_ndfd_date_uct, "_24hr_cmu_wgs84.tif"), overwrite = TRUE)
+# writeRaster(ndfd_qpf_raster_2day_cmu_wgs84, paste0(ndfd_spatial_data_output_path, "qpf_", latest_ndfd_date_uct, "_48hr_cmu_wgs84.tif"), overwrite = TRUE)
+# writeRaster(ndfd_qpf_raster_3day_cmu_wgs84, paste0(ndfd_spatial_data_output_path, "qpf_", latest_ndfd_date_uct, "_72hr_cmu_wgs84.tif"), overwrite = TRUE)
 
 
-# ---- 11. area weighted ndfd cmu calcs ----
+# ---- 12. area weighted ndfd cmu calcs ----
 # need to do this for pop12 and qpf and for 1-day, 2-day, and 3-day forecasts
 ndfd_cmu_calcs_data <- data.frame(row_num = as.numeric(),
                                   HA_CLASS = as.character(),
@@ -455,12 +458,12 @@ stop_time - start_time
 # Time difference of ~3 to 4 min
 
 
-# ---- 12. export area weighted ndfd cmu calcs ----
+# ---- 13. export area weighted ndfd cmu calcs ----
 # export calcs for 1-day, 2-day, and 3-day forecasts
-write_csv(ndfd_cmu_calcs_data, paste0(ndfd_sco_tabular_data_export_path, "cmu_calcs/ndfd_cmu_calcs_", latest_ndfd_date_uct_str, ".csv"))
+write_csv(ndfd_cmu_calcs_data, paste0(ndfd_tabular_data_output_path, "cmu_calcs/ndfd_cmu_calcs_", latest_ndfd_date_uct_str, ".csv"))
 
 
-# ---- 13. min and max ndfd sga calcs ----
+# ---- 14. min and max ndfd sga calcs ----
 # use rainfall threshold data to create a lookup table
 cmu_sga_lookup <- rainfall_thresh_data %>%
   dplyr::select(HA_CLASS, grow_area)
@@ -493,12 +496,12 @@ ndfd_sga_calcs_data <- ndfd_cmu_calcs_join_data %>%
   dplyr::right_join(sga_full_list, by = "grow_area") # fills in missing sgas
 
 
-# ---- 14. export min and max ndfd sga calcs ----
+# ---- 15. export min and max ndfd sga calcs ----
 # export sga min and max calcs for 1-day, 2-day, and 3-day forecasts
-write_csv(ndfd_sga_calcs_data,  paste0(ndfd_sco_tabular_data_export_path, "sga_calcs/ndfd_sga_calcs_", latest_ndfd_date_uct_str, ".csv"))
+write_csv(ndfd_sga_calcs_data,  paste0(ndfd_tabular_data_output_path, "sga_calcs/ndfd_sga_calcs_", latest_ndfd_date_uct_str, ".csv"))
 
 
-# ---- 15. select area weighted ndfd cmu calcs for leases ----
+# ---- 16. select area weighted ndfd cmu calcs for leases ----
 # find leases that are in cmus
 ndfd_lease_calcs_data_raw <- cmu_bounds_albers %>%
   st_intersection(lease_data_albers) %>%
@@ -561,11 +564,11 @@ ndfd_lease_calcs_data <- rbind(ndfd_lease_calcs_data_spread, ndfd_leases_ignored
 # length(unique(ndfd_lease_calcs_data$lease_id)) # 513 ok!
 
 
-# ---- 16. export lease data ----
-write_csv(ndfd_lease_calcs_data, paste0(ndfd_sco_tabular_data_export_path, "lease_calcs/ndfd_lease_calcs_", latest_ndfd_date_uct_str, ".csv"))
+# ---- 17. export lease data ----
+write_csv(ndfd_lease_calcs_data, paste0(ndfd_tabular_data_output_path, "lease_calcs/ndfd_lease_calcs_", latest_ndfd_date_uct_str, ".csv"))
 
 
-# ---- 17. save ignored leases ----
+# ---- 18. save ignored leases ----
 
 # save ignored leases
 ndfd_leases_ignored_data <- lease_data_albers %>%
@@ -574,10 +577,10 @@ ndfd_leases_ignored_data <- lease_data_albers %>%
 # check crs
 # st_crs(ndfd_leases_ignored_data)
 
-# ---- 18. export data for ignored leases ----
+# ---- 19. export data for ignored leases ----
 
 # export ignored lease data
-st_write(ndfd_leases_ignored_data, paste0(lease_ignored_data_path, "leases_ignored_albers_", latest_ndfd_date_uct_str, ".shp"))
+st_write(ndfd_leases_ignored_data, paste0(lease_spatial_data_output_path, "leases_ignored_albers_", latest_ndfd_date_uct_str, ".shp"))
 
 
 # ---- ??? text exp function ----

@@ -14,7 +14,7 @@
 # to do list
 
 # TODO finish date_check if statement
-# TODO fix latest load in
+# TODO (wishlist) use here package
 
 
 # ---- 1. install packages ----
@@ -23,6 +23,7 @@
 # install.packages("raster")
 # install.packages("sf")
 # install.packages("lubridate")
+# install.packages("here")
 
 
 # ---- 2. load packages ----
@@ -30,20 +31,26 @@ library(tidyverse)
 library(raster)
 library(sf)
 library(lubridate)
+#library(here)
 
 
-# ---- 3. defining paths and projections ----
-# base path
-data_base_path = "/Users/sheila/Documents/bae_shellcast_project/shellcast_analysis/data/web_app_data/" 
+# ---- 3. define base paths ----
+# base path to data
+# data_base_path = "...analysis/data/" # set this and uncomment!
+data_base_path = "/Users/sheila/Documents/bae_shellcast_project/shellcast_analysis/web_app_data/" 
 
-# path to data
-ndfd_data_path <- paste0(data_base_path, "tabular/ndfd_sco_data_raw/")
 
-# nc buffer data path
-nc_bounds_buffer_path <- paste0(data_base_path, "spatial/generated/region_state_bounds/")
+# ---- 4. use base paths and define projections ----
+# path to ndfd tabular inputs
+ndfd_tabular_data_input_path <- paste0(data_base_path, "tabular/outputs/ndfd_sco_data/ndfd_sco_data_raw/")
 
-# exporting ndfd raster spatial data path
-ndfd_sco_spatial_data_export_path <- paste0(base_path, "spatial/generated/ndfd_sco_data/")
+# path to nc buffer spatial inputs
+nc_buffer_spatial_input_path <- paste0(data_base_path, "spatial/inputs/state_bounds_data/")
+
+
+# path to ndfd spatial outputs
+ndfd_sco_spatial_data_output_path <- paste0(data_base_path, "spatial/outputs/ndfd_sco_data/")
+
 
 # define proj4 string for ndfd data
 ndfd_proj4 = "+proj=lcc +lat_1=25 +lat_2=25 +lat_0=25 +lon_0=-95 +x_0=0 +y_0=0 +a=6371000 +b=6371000 +units=m +no_defs"
@@ -58,45 +65,64 @@ wgs84_epsg <- 4326
 wgs84_proj4 <- "+proj=longlat +datum=WGS84 +no_defs"
 
 
-# ---- 4. pull latest ndfd file name ----
+# ---- 5. pull latest ndfd file name ----
 # list files in ndfd_sco_data_raw
-ndfd_files <- list.files(ndfd_data_path, pattern = "pop12_*") # if there is a pop12 dataset there's a qpf dataset
+ndfd_files <- list.files(ndfd_tabular_data_input_path, pattern = "pop12_*") # if there is a pop12 dataset there's a qpf dataset
 
+
+# option 1: select based on minimum difference to current date, will always have result (but it might not be the most current)
 # grab dates
-ndfd_file_dates <- gsub("pop12_", "", gsub(".csv", "", ndfd_files))
+ndfd_file_dates <- lubridate::ymd(gsub("pop12_", "", gsub("00.csv", "", ndfd_files))) # assumes midnight
 
 # save todya's date
 today_date_uct <- lubridate::today(tzone = "UCT")
 
+# calcualte difference
+diff_ndfd_file_dates <- as.numeric(today_date_uct - ndfd_file_dates) # in days
+
+# find position of smallest difference
+latest_ndfd_date_uct <- ndfd_file_dates[diff_ndfd_file_dates == min(diff_ndfd_file_dates)]
+
+# convert to string
+latest_ndfd_date_uct_str <- strftime(latest_ndfd_date_uct, format = "%Y%m%d%H") # assumes midnight
+
+
+# option 2: will give an empty latest_ndfd_date_uct variable, if exact day is not available
+# grab dates
+# ndfd_file_dates <- gsub("pop12_", "", gsub("00.csv", "", ndfd_files))
+
+# save todya's date
+# today_date_uct <- lubridate::today(tzone = "UCT")
+
 # convert to string for later use
-today_date_uct_str <- strftime(today_date_uct, format = "%Y%m%d%H")
+# today_date_uct_str <- strftime(today_date_uct, format = "%Y%m%d%H")
 
 # check that date exists
-date_check <- ndfd_file_dates[ndfd_file_dates == today_date_uct_str]
+# date_check <- ndfd_file_dates[ndfd_file_dates == today_date_uct_str]
 
 # if statement that if length(date_check) < 1 then don't run this script
-latest_uct_str <- today_date_uct_str
+# latest_ndfd_date_uct_str <- today_date_uct_str
 
 
-# ---- 5. load data ----
+# ---- 6. load data ----
 # latest ndfd path strings
-ndfd_latest_pop12_file_name <- paste0("pop12_", latest_uct_str, ".csv")
-ndfd_latest_qpf_file_name <- paste0("qpf_", latest_uct_str, ".csv")
+ndfd_latest_pop12_file_name <- paste0("pop12_", latest_ndfd_date_uct_str, ".csv")
+ndfd_latest_qpf_file_name <- paste0("qpf_", latest_ndfd_date_uct_str, ".csv")
 
 # pop12 tabular data
-ndfd_pop12_data_raw <- read_csv(paste0(ndfd_data_path, ndfd_latest_pop12_file_name),
+ndfd_pop12_data_raw <- read_csv(paste0(ndfd_tabular_data_input_path, ndfd_latest_pop12_file_name),
                                 col_types = list(col_double(), col_double(), col_double(), col_double(), col_double(), col_double(), col_double(),
                                                  col_character(), col_character(), col_character(), col_character(), col_character()))
 
 # qpf tabular data
-ndfd_qpf_data_raw <- read_csv(paste0(ndfd_data_path, ndfd_latest_qpf_file_name),
+ndfd_qpf_data_raw <- read_csv(paste0(ndfd_tabular_data_input_path, ndfd_latest_qpf_file_name),
                               col_types = list(col_double(), col_double(), col_double(), col_double(), col_double(), col_double(), col_double(),
                                                col_character(), col_character(), col_character(), col_character(), col_character()))
 # nc buffer bounds vector
-nc_buffer_albers <- st_read(paste0(nc_bounds_buffer_path, "nc_bounds_10kmbuf_albers.shp"))
+nc_buffer_albers <- st_read(paste0(nc_buffer_spatial_input_path, "nc_bounds_10kmbuf_albers.shp"))
 
 
-# ---- 6. wrangle ndfd tabular data ----
+# ---- 7. wrangle ndfd tabular data ----
 # initial clean up pop12
 ndfd_pop12_data <- ndfd_pop12_data_raw %>%
   dplyr::select(x_index, y_index, latitude_km, longitude_km, time_uct, time_nyc, pop12_value_perc, valid_period_hrs) %>%
@@ -111,7 +137,7 @@ ndfd_qpf_data <- ndfd_qpf_data_raw %>%
                 qpf_value_in = qpf_value_kgperm2 * (1/1000) * (100) * (1/2.54)) # convert to m (density of water is 1000 kg/m3) then cm then inches
 
 
-# ---- 7. convert tabular ndfd data to (vector) spatial data ----
+# ---- 8. convert tabular ndfd data to (vector) spatial data ----
 # pop12
 # convert pop12 to spatial data
 ndfd_pop12_albers <- st_as_sf(ndfd_pop12_data, 
@@ -167,7 +193,7 @@ ndfd_qpf_albers_3day <- ndfd_qpf_albers %>%
   dplyr::filter(valid_period_hrs == 72)
 
 
-# ---- 8. convert vector ndfd data to raster data ----
+# ---- 9. convert vector ndfd data to raster data ----
 # make empty pop12 raster for 1-day, 2-day, and 3-day forecasts
 ndfd_pop12_grid_1day <- raster(ncol = length(unique(ndfd_pop12_albers_1day$longitude_km)), 
                                nrows = length(unique(ndfd_pop12_albers_1day$latitude_km)), 
@@ -218,7 +244,7 @@ ndfd_qpf_raster_3day_albers <- raster::rasterize(ndfd_qpf_albers_3day, ndfd_qpf_
 # plot(ndfd_qpf_raster_3day_albers)
 
 
-# ---- 9. crop midatlantic raster ndfd data to nc bounds ----
+# ---- 10. crop midatlantic raster ndfd data to nc bounds ----
 # pop12 for 1-day, 2-day, and 3-day forecasts
 ndfd_pop12_raster_1day_nc_albers <- raster::crop(ndfd_pop12_raster_1day_albers, nc_buffer_albers)
 ndfd_pop12_raster_2day_nc_albers <- raster::crop(ndfd_pop12_raster_2day_albers, nc_buffer_albers)
@@ -257,25 +283,25 @@ ndfd_qpf_raster_3day_nc_albers <- raster::crop(ndfd_qpf_raster_3day_albers, nc_b
 # plot(ndfd_qpf_raster_3day_nc_wgs84)
 
 
-# ---- 10. export nc raster ndfd data ----
+# ---- 11. export nc raster ndfd data ----
 # export pop12 rasters for 1-day, 2-day, and 3-day forecasts
-writeRaster(ndfd_pop12_raster_1day_nc_albers, paste0(ndfd_sco_spatial_data_export_path, "pop12_", latest_uct_str, "_24hr_nc_albers.tif"), overwrite = TRUE)
-writeRaster(ndfd_pop12_raster_2day_nc_albers, paste0(ndfd_sco_spatial_data_export_path, "pop12_", latest_uct_str, "_48hr_nc_albers.tif"), overwrite = TRUE)
-writeRaster(ndfd_pop12_raster_3day_nc_albers, paste0(ndfd_sco_spatial_data_export_path, "pop12_", latest_uct_str, "_72hr_nc_albers.tif"), overwrite = TRUE)
+writeRaster(ndfd_pop12_raster_1day_nc_albers, paste0(ndfd_sco_spatial_data_output_path, "pop12_", latest_ndfd_date_uct_str, "_24hr_nc_albers.tif"), overwrite = TRUE)
+writeRaster(ndfd_pop12_raster_2day_nc_albers, paste0(ndfd_sco_spatial_data_output_path, "pop12_", latest_ndfd_date_uct_str, "_48hr_nc_albers.tif"), overwrite = TRUE)
+writeRaster(ndfd_pop12_raster_3day_nc_albers, paste0(ndfd_sco_spatial_data_output_path, "pop12_", latest_ndfd_date_uct_str, "_72hr_nc_albers.tif"), overwrite = TRUE)
 
 # export qpf rasters for 1-day, 2-day, and 3-day forecasts
-writeRaster(ndfd_qpf_raster_1day_nc_albers, paste0(ndfd_sco_spatial_data_export_path, "qpf_", latest_uct_str, "_24hr_nc_albers.tif"), overwrite = TRUE)
-writeRaster(ndfd_qpf_raster_2day_nc_albers, paste0(ndfd_sco_spatial_data_export_path, "qpf_", latest_uct_str, "_48hr_nc_albers.tif"), overwrite = TRUE)
-writeRaster(ndfd_qpf_raster_3day_nc_albers, paste0(ndfd_sco_spatial_data_export_path, "qpf_", latest_uct_str, "_72hr_nc_albers.tif"), overwrite = TRUE)
+writeRaster(ndfd_qpf_raster_1day_nc_albers, paste0(ndfd_sco_spatial_data_output_path, "qpf_", latest_ndfd_date_uct_str, "_24hr_nc_albers.tif"), overwrite = TRUE)
+writeRaster(ndfd_qpf_raster_2day_nc_albers, paste0(ndfd_sco_spatial_data_output_path, "qpf_", latest_ndfd_date_uct_str, "_48hr_nc_albers.tif"), overwrite = TRUE)
+writeRaster(ndfd_qpf_raster_3day_nc_albers, paste0(ndfd_sco_spatial_data_output_path, "qpf_", latest_ndfd_date_uct_str, "_72hr_nc_albers.tif"), overwrite = TRUE)
 
 # export pop12 rasters as wgs84 too for 1-day, 2-day, and 3-day forecasts
-# writeRaster(ndfd_pop12_raster_1day_nc_wgs84, paste0(ndfd_sco_spatial_data_export_path, "pop12_", latest_uct_str, "_24hr_nc_wgs84.tif"), overwrite = TRUE)
-# writeRaster(ndfd_pop12_raster_2day_nc_wgs84, paste0(ndfd_sco_spatial_data_export_path, "pop12_", latest_uct_str, "_48hr_nc_wgs84.tif"), overwrite = TRUE)
-# writeRaster(ndfd_pop12_raster_3day_nc_wgs84, paste0(ndfd_sco_spatial_data_export_path, "pop12_", latest_uct_str, "_72hr_nc_wgs84.tif"), overwrite = TRUE)
+# writeRaster(ndfd_pop12_raster_1day_nc_wgs84, paste0(ndfd_sco_spatial_data_output_path, "pop12_", latest_ndfd_date_uct_str, "_24hr_nc_wgs84.tif"), overwrite = TRUE)
+# writeRaster(ndfd_pop12_raster_2day_nc_wgs84, paste0(ndfd_sco_spatial_data_output_path, "pop12_", latest_ndfd_date_uct_str, "_48hr_nc_wgs84.tif"), overwrite = TRUE)
+# writeRaster(ndfd_pop12_raster_3day_nc_wgs84, paste0(ndfd_sco_spatial_data_output_path, "pop12_", latest_ndfd_date_uct_str, "_72hr_nc_wgs84.tif"), overwrite = TRUE)
 
 # export qpf rasters as wgs84 too for 1-day, 2-day, and 3-day forecasts
-# writeRaster(ndfd_qpf_raster_1day_nc_wgs84, paste0(ndfd_sco_spatial_data_export_path, "qpf_", latest_uct_str, "_24hr_nc_wgs84.tif"), overwrite = TRUE)
-# writeRaster(ndfd_qpf_raster_2day_nc_wgs84, paste0(ndfd_sco_spatial_data_export_path, "qpf_", latest_uct_str, "_48hr_nc_wgs84.tif"), overwrite = TRUE)
-# writeRaster(ndfd_qpf_raster_3day_nc_wgs84, paste0(ndfd_sco_spatial_data_export_path, "qpf_", latest_uct_str, "_72hr_nc_wgs84.tif"), overwrite = TRUE)
+# writeRaster(ndfd_qpf_raster_1day_nc_wgs84, paste0(ndfd_sco_spatial_data_output_path, "qpf_", latest_ndfd_date_uct_str, "_24hr_nc_wgs84.tif"), overwrite = TRUE)
+# writeRaster(ndfd_qpf_raster_2day_nc_wgs84, paste0(ndfd_sco_spatial_data_output_path, "qpf_", latest_ndfd_date_uct_str, "_48hr_nc_wgs84.tif"), overwrite = TRUE)
+# writeRaster(ndfd_qpf_raster_3day_nc_wgs84, paste0(ndfd_sco_spatial_data_output_path, "qpf_", latest_ndfd_date_uct_str, "_72hr_nc_wgs84.tif"), overwrite = TRUE)
 
 
