@@ -67,6 +67,9 @@ ndfd_tabular_data_output_path <- paste0(data_base_path, "tabular/outputs/ndfd_sc
 # path to ignored lease bounds spatial outputs
 lease_spatial_data_output_path <- paste0(data_base_path, "spatial/outputs/ncdmf_data/lease_bounds_ignored_albers/")
 
+# path to ignored lease bounds tabular outputs
+lease_tabular_data_output_path <- paste0(data_base_path, "tabular/outputs/ndfd_sco_data/lease_calcs/leases_ignored/")
+
 
 # define proj4 string for ndfd data
 ndfd_proj4 = "+proj=lcc +lat_1=25 +lat_2=25 +lat_0=25 +lon_0=-95 +x_0=0 +y_0=0 +a=6371000 +b=6371000 +units=m +no_defs"
@@ -577,53 +580,16 @@ ndfd_leases_ignored_data <- lease_data_albers %>%
 # check crs
 # st_crs(ndfd_leases_ignored_data)
 
+# save ignored leases (as tabular)
+ndfd_leases_ignored_tab_data <- ndfd_leases_ignored_data %>%
+  st_drop_geometry()
+
+
 # ---- 19. export data for ignored leases ----
 
 # export ignored lease data
-st_write(ndfd_leases_ignored_data, paste0(lease_spatial_data_output_path, "leases_ignored_albers_", latest_ndfd_date_uct_str, ".shp"))
+# st_write(ndfd_leases_ignored_data, paste0(lease_spatial_data_output_path, "leases_ignored_albers_", latest_ndfd_date_uct_str, ".shp"))
 
-
-# ---- ??? text exp function ----
-# my_pop12 <- 50
-# my_qpf <- seq(from = 0, to = 5, by = 0.5)
-# my_thresh <- 4
-# my_pc <- my_pop12 * exp(-my_thresh/my_qpf)
-# plot(my_pc ~ my_qpf)
-
-
-# ---- ??? wrangle data ----
-
-# max(ndfd_pop12_data_raw$x_index)/2 # = 96.5 so set cutoff at 96?
-# mirroring_fix = 96
-# 
-# # both diagonals of the matrix are being plotted (just want one)
-# ndfd_pop12_data <- ndfd_pop12_data_raw %>%
-#   mutate(longitude_fix = -(360 - longitude)) %>%
-#   filter(step_index == "0 days 12:00:00.000000000") %>%
-#   arrange(x_index, y_index) %>%
-#   #mutate(row_id = seq(1, 38800)) %>%
-#   filter(x_index > mirroring_fix)
-# 
-# ggplot(data = ndfd_pop12_data) +
-#   geom_point(aes(x = x_index, y = y_index, color = pop12_value_perc)) +
-#   scale_color_gradient(low = "white", high = "blue", na.value = "grey90", limits = c(0, 100))
-# 
-# ggplot(data = ndfd_pop12_data) +
-#   geom_point(aes(x = longitude_fix, y = latitude, color = pop12_value_perc)) +
-#   scale_color_gradient(low = "white", high = "blue", na.value = "grey90", limits = c(0, 100))
-
-
-# ---- ??? plot data ----
-
-# ggplot(data = ndfd_pop12_data_raw %>% filter(step_index == "0 days 12:00:00.000000000")) +
-#   geom_point(aes(x = x_index, y = y_index, fill = pop12_value_perc))
-# 
-# ggplot(data = ndfd_pop12_data_raw %>% filter(step_index == "0 days 12:00:00.000000000")) +
-#   geom_point(aes(x = x_index, y = y_index, color = pop12_value_perc)) +
-#   scale_color_gradient(low = "white", high = "blue", na.value = "grey90", limits = c(0, 100))# +
-#   #scale_x_reverse()
-# 
-# ggplot(data = ndfd_qpf_data_raw %>% filter(step_index == "0 days 12:00:00.000000000")) +
-#   geom_point(aes(x = -(longitude), y = latitude, color = qpf_value_in)) +
-#   scale_color_gradient(low = "white", high = "blue", na.value = "grey90")
+# export ignored lease data (tabular)
+write_csv(ndfd_leases_ignored_tab_data, paste0(lease_tabular_data_output_path, "leases_ignored_", latest_ndfd_date_uct_str, ".csv"))
 
