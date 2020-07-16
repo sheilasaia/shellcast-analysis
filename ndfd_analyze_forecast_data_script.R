@@ -483,7 +483,7 @@ stop_time - start_time
 # Time difference of ~3 to 4 min
 
 # print date
-print(paste0(ndfd_date_uct, " analysis complete"))
+print(paste0(ndfd_date_uct, "spatial averaging complete"))
 
 
 # ---- 12. export area weighted ndfd cmu calcs ----
@@ -621,3 +621,5 @@ write_csv(ndfd_lease_calcs_data, paste0(ndfd_tabular_data_output_path, "lease_ca
 # export ignored lease data (tabular)
 # write_csv(ndfd_leases_ignored_tab_data, paste0(lease_tabular_data_output_path, "leases_ignored_", latest_ndfd_date_uct_str, ".csv"))
 
+
+print("finished analyzing forecast data")
