@@ -130,8 +130,11 @@ if (len(temp_data) > 0):
     if ((len(temp_qpf_data_pd) > 0) and (len(temp_pop12_data_pd) > 0)):
 
         # define export path
-        temp_qpf_data_path = tabular_output_path + "qpf_" + temp_qpf_datetime_ymdh_str +  ".csv"
-        temp_pop12_data_path = tabular_output_path + "pop12_" + temp_pop12_datetime_ymdh_str + ".csv"
+        # temp_qpf_data_path = tabular_output_path + "qpf_" + temp_qpf_datetime_ymdh_str +  ".csv" # includes date in file name
+        # temp_pop12_data_path = tabular_output_path + "pop12_" + temp_pop12_datetime_ymdh_str + ".csv" # includes date in file name
+        temp_qpf_data_path = tabular_output_path + "qpf.csv"
+        temp_pop12_data_path = tabular_output_path + "pop12.csv"
+
 
         # export results
         temp_qpf_data_pd.to_csv(temp_qpf_data_path, index = False)
@@ -145,7 +148,7 @@ if (len(temp_data) > 0):
         # export data availability (i.e., append new row to data_log.csv)
         # data_availability_path = tabular_output_path + "data_available_" + temp_datetime_ymdh_str +  ".csv"
         # data_available_pd.to_csv(data_availability_path, index = False)
-        data_log_path = tabular_output_path + "data_log.csv"
+        data_log_path = tabular_output_path + "data_log.csv" 
         append_list_as_row(data_log_path, temp_data_log)
 
         # print status
