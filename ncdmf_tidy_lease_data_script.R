@@ -179,7 +179,7 @@ lease_data_centroid_albers_join <- lease_data_centroid_albers %>%
   dplyr::slice(which.min(rain_in)) %>%
   #dplyr::group_by(lease_id, rain_in) %>%
   #dplyr::count() %>%
-  dplyr::select(lease_id:county, grow_area, rain_thresh_in = rain_in, rain_thresh_desc = rain_lab)
+  dplyr::select(lease_id:county, grow_area, rain_in, rain_lab)
 
 # NOTE!
 # in the case that the centroid of the lease is at the edge of two growing areas then this code will take
@@ -190,7 +190,7 @@ lease_data_centroid_albers_join <- lease_data_centroid_albers %>%
 # save tabular data from lease_data_centroid_albers_join to the lease polygons
 lease_data_centroids_join_no_geom <- lease_data_centroid_albers_join %>%
   st_drop_geometry() %>%
-  dplyr::select(lease_id, grow_area:rain_thresh_desc)
+  dplyr::select(lease_id, grow_area:rain_lab)
 
 # join to polygon dataset
 lease_data_albers_join <- lease_data_albers %>%
