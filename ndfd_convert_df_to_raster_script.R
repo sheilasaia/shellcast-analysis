@@ -324,3 +324,4 @@ writeRaster(ndfd_qpf_raster_3day_nc_albers, paste0(ndfd_sco_spatial_data_output_
 # writeRaster(ndfd_qpf_raster_3day_nc_wgs84, paste0(ndfd_sco_spatial_data_output_path, "qpf_", latest_ndfd_date_uct_str, "_72hr_nc_wgs84.tif"), overwrite = TRUE)
 
 
+print("finished converting df to raster")
