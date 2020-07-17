@@ -1,6 +1,6 @@
 # ---- script header ----
 # script name: ncdmf_tidy_lease_data_script.R
-# purpose of script: tidy up lease data from nc dmf
+# purpose of script: tidy up lease data from nc dmf rest api (assumes data is in .shp format)
 # author: sheila saia
 # date created: 20200617
 # email: ssaia@ncsu.edu
@@ -215,28 +215,14 @@ lease_data_centroid_wgs94_geojson <- sf_geojson(lease_data_centroid_wgs94, atomi
 
 # ---- 9. export data ----
 # export data as shape file for record keeping
-# st_write(lease_data_albers_join, paste0(lease_data_spatial_output_path, "lease_bounds_albers/lease_bounds_albers_", latest_date_uct_str, ".shp")) # includes date in file name
-# st_write(lease_data_centroids_albers_final, paste0(lease_data_spatial_output_path, "lease_centroids_albers/leases_centroids_albers_", latest_date_uct_str, ".shp")) # includes date in file name
-st_write(lease_data_albers_join, paste0(lease_data_spatial_output_path, "lease_bounds_albers/lease_bounds_albers.shp"), delete_layer = TRUE)
-st_write(lease_data_centroids_albers_final, paste0(lease_data_spatial_output_path, "lease_centroids_albers/leases_centroids_albers.shp"), delete_layer = TRUE)
+# st_write(lease_data_albers_join, paste0(lease_data_spatial_output_path, "lease_bounds/lease_bounds_albers_", latest_date_uct_str, ".shp")) # includes date in file name
+# st_write(lease_data_centroids_albers_final, paste0(lease_data_spatial_output_path, "lease_centroids/leases_centroids_albers_", latest_date_uct_str, ".shp")) # includes date in file name
+st_write(lease_data_albers_join, paste0(lease_data_spatial_output_path, "lease_bounds/lease_bounds_albers.shp"), delete_layer = TRUE)
+st_write(lease_data_centroids_albers_final, paste0(lease_data_spatial_output_path, "lease_centroids/leases_centroids_albers.shp"), delete_layer = TRUE)
 
 # export data as geojson for web app
-# write_file(lease_data_wgs94_geojson, paste0(lease_data_spatial_output_path, "lease_bounds_wgs84/lease_bounds_wgs84_", latest_date_uct_str, ".geojson")) # includes date in file name
-# write_file(lease_data_centroid_wgs94_geojson, paste0(lease_data_spatial_output_path, "lease_centroids_wgs84/leases_centroids_wgs84_", latest_date_uct_str, ".geojson")) # includes date in file name
-write_file(lease_data_wgs94_geojson, paste0(lease_data_spatial_output_path, "lease_bounds_wgs84/lease_bounds_wgs84.geojson"))
-write_file(lease_data_centroid_wgs94_geojson, paste0(lease_data_spatial_output_path, "lease_centroids_wgs84/leases_centroids_wgs84.geojson"))
+# write_file(lease_data_wgs94_geojson, paste0(lease_data_spatial_output_path, "lease_bounds/lease_bounds_wgs84_", latest_date_uct_str, ".geojson")) # includes date in file name
+# write_file(lease_data_centroid_wgs94_geojson, paste0(lease_data_spatial_output_path, "lease_centroids/leases_centroids_wgs84_", latest_date_uct_str, ".geojson")) # includes date in file name
+write_file(lease_data_wgs94_geojson, paste0(lease_data_spatial_output_path, "lease_bounds/lease_bounds_wgs84.geojson"))
+write_file(lease_data_centroid_wgs94_geojson, paste0(lease_data_spatial_output_path, "lease_centroids/leases_centroids_wgs84.geojson"))
 
-
-# ---- extra code ----
-# select leases (ignore in production)
-# st_write(lease_data_albers, paste0(lease_data_spatial_output_path, "leases_select_albers.shp"))
-# st_write(lease_data_centroid_albers, paste0(lease_data_spatial_output_path, "leases_select_centroid_albers.shp"))
-# write_file(lease_data_wgs94_geojson, paste0(lease_data_spatial_output_path, "leases_select_wgs84.geojson"))
-# write_file(lease_data_centroid_wgs94_geojson, paste0(lease_data_spatial_output_path, "leases_select_centroid_wgs84.geojson"))
-
-# raw lease data to wgs84 and geojson (for stanton)
-# lease_bounds_raw_wgs84 <- lease_bounds_raw %>%
-#   st_transform(crs = wgs84_epsg)
-# st_crs(lease_bounds_raw_wgs84)
-# lease_bounds_raw_wgs84_geojson <- sf_geojson(lease_bounds_raw_wgs84, atomise = FALSE, simplify = TRUE, digits = 5)
-# write_file(lease_bounds_raw_wgs84_geojson, paste0(lease_data_path, "leases_select_raw_wgs84.geojson"))
