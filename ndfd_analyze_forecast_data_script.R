@@ -522,13 +522,13 @@ ndfd_sga_calcs_data <- ndfd_cmu_calcs_join_data %>%
                                              valid_period_hrs == 48 ~ "2d_prob",
                                              valid_period_hrs == 72 ~ "3d_prob")) %>%
   tidyr::pivot_wider(id_cols = "grow_area", names_from = valid_period_hrs, values_from = c(min, max)) %>%
-  dplyr::right_join(sga_full_list, by = "grow_area") # fills in missing sgas
-
+  dplyr::right_join(sga_full_list, by = "grow_area") %>% # fills in missing sgas
+  dplyr::select(grow_area_name = grow_area, min_1d_prob, max_1d_prod, min_2d_prob, max_2d_prob, min_3d_prob, max_3d_prob)
 
 # ---- 14. export min and max ndfd sga calcs ----
 # export sga min and max calcs for 1-day, 2-day, and 3-day forecasts
 # write_csv(ndfd_sga_calcs_data,  paste0(ndfd_tabular_data_output_path, "sga_calcs/ndfd_sga_calcs_", latest_ndfd_date_uct_str, ".csv")) # includes date in file name
-write_csv(ndfd_cmu_calcs_data, paste0(ndfd_tabular_data_output_path, "sga_calcs/ndfd_sga_calcs.csv"))
+write_csv(ndfd_sga_calcs_data, paste0(ndfd_tabular_data_output_path, "sga_calcs/ndfd_sga_calcs.csv"))
 
 
 # ---- 15. select area weighted ndfd cmu calcs for leases ----
