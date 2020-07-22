@@ -200,29 +200,29 @@ ndfd_qpf_wgs84_3day <- ndfd_qpf_wgs84 %>%
 # make empty pop12 raster for 1-day, 2-day, and 3-day forecasts
 ndfd_pop12_grid_1day <- raster(ncol = length(unique(ndfd_pop12_wgs84_1day$longitude_km)), 
                                nrows = length(unique(ndfd_pop12_wgs84_1day$latitude_km)), 
-                               crs = wgs84_epsg,
+                               crs = wgs84_proj4,
                                ext = extent(ndfd_pop12_wgs84_1day))
 ndfd_pop12_grid_2day <- raster(ncol = length(unique(ndfd_pop12_wgs84_2day$longitude_km)), 
                                nrows = length(unique(ndfd_pop12_wgs84_2day$latitude_km)), 
-                               crs = wgs84_epsg,
+                               crs = wgs84_proj4,
                                ext = extent(ndfd_pop12_wgs84_2day))
 ndfd_pop12_grid_3day <- raster(ncol = length(unique(ndfd_pop12_wgs84_3day$longitude_km)), 
                                nrows = length(unique(ndfd_pop12_wgs84_3day$latitude_km)), 
-                               crs = wgs84_epsg,
+                               crs = wgs84_proj4,
                                ext = extent(ndfd_pop12_wgs84_3day))
 
 # make empty qpf raster for 1-day, 2-day, and 3-day forecasts
 ndfd_qpf_grid_1day <- raster(ncol = length(unique(ndfd_qpf_wgs84_1day$longitude_km)), 
                              nrows = length(unique(ndfd_qpf_wgs84_1day$latitude_km)), 
-                             crs = wgs84_epsg,
+                             crs = wgs84_proj4,
                              ext = extent(ndfd_qpf_wgs84_1day))
 ndfd_qpf_grid_2day <- raster(ncol = length(unique(ndfd_qpf_wgs84_2day$longitude_km)), 
                              nrows = length(unique(ndfd_qpf_wgs84_2day$latitude_km)), 
-                             crs = wgs84_epsg,
+                             crs = wgs84_proj4,
                              ext = extent(ndfd_qpf_wgs84_2day))
 ndfd_qpf_grid_3day <- raster(ncol = length(unique(ndfd_qpf_wgs84_3day$longitude_km)), 
                              nrows = length(unique(ndfd_qpf_wgs84_3day$latitude_km)), 
-                             crs = wgs84_epsg,
+                             crs = wgs84_proj4,
                              ext = extent(ndfd_qpf_wgs84_3day))
 
 # rasterize pop12 for 1-day, 2-day, and 3-day forecasts
