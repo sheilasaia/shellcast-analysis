@@ -103,5 +103,5 @@ nc_bounds_10kmbuf_wgs84 <- nc_bounds_10kmbuf_albers %>%
 # export
 # st_write(nc_bounds_5kmbuf_albers, paste0(state_bounds_spatial_data_output_path, "nc_bounds_5kmbuf_albers.shp"), delete_layer = TRUE)
 st_write(nc_bounds_10kmbuf_albers, paste0(state_bounds_spatial_data_output_path, "nc_bounds_10kmbuf_albers.shp"), delete_layer = TRUE)
-st_write(nc_bounds_10kmbuf_albers, paste0(state_bounds_spatial_data_output_path, "nc_bounds_10kmbuf_wgs84.shp"), delete_layer = TRUE)
+st_write(nc_bounds_10kmbuf_wgs84, paste0(state_bounds_spatial_data_output_path, "nc_bounds_10kmbuf_wgs84.shp"), delete_layer = TRUE)
 

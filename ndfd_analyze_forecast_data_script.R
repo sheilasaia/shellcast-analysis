@@ -165,7 +165,7 @@ ndfd_qpf_raster_3day_albers <- raster::raster(paste0(ndfd_spatial_data_input_pat
 
 # spatial data
 # sga buffer bounds
-sga_buffer_albers <- st_read(paste0(sga_spatial_data_input_path, "sga_bounds_buffer_albers.shp"))  %>%
+sga_buffer_albers <- st_read(paste0(sga_spatial_data_input_path, "sga_bounds_10kmbuf_albers.shp"))  %>%
   st_set_crs(na_albers_epsg) # epsg code wasn't assigned if this code isn't included
 
 # sga data
@@ -173,7 +173,7 @@ sga_bounds_albers <- st_read(paste0(sga_spatial_data_input_path, "sga_bounds_sim
   st_set_crs(na_albers_epsg) # epsg code wasn't assigned if this code isn't included
 
 # cmu buffer bounds
-cmu_buffer_albers <- st_read(paste0(cmu_spatial_data_input_path, "cmu_bounds_buffer_albers.shp"))  %>%
+cmu_buffer_albers <- st_read(paste0(cmu_spatial_data_input_path, "cmu_bounds_10kmbuf_albers.shp"))  %>%
   st_set_crs(na_albers_epsg) # epsg code wasn't assigned if this code isn't included
 
 # cmu bounds
@@ -523,7 +523,7 @@ ndfd_sga_calcs_data <- ndfd_cmu_calcs_join_data %>%
                                              valid_period_hrs == 72 ~ "3d_prob")) %>%
   tidyr::pivot_wider(id_cols = "grow_area", names_from = valid_period_hrs, values_from = c(min, max)) %>%
   dplyr::right_join(sga_full_list, by = "grow_area") %>% # fills in missing sgas
-  dplyr::select(grow_area_name = grow_area, min_1d_prob, max_1d_prod, min_2d_prob, max_2d_prob, min_3d_prob, max_3d_prob)
+  dplyr::select(grow_area_name = grow_area, min_1d_prob, max_1d_prob, min_2d_prob, max_2d_prob, min_3d_prob, max_3d_prob)
 
 # ---- 14. export min and max ndfd sga calcs ----
 # export sga min and max calcs for 1-day, 2-day, and 3-day forecasts
