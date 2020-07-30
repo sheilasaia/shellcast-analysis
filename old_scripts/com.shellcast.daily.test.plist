@@ -11,12 +11,15 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-  <key>Label</key>
-  <string>com.sheila.shellcastdaily.cronjob</string>
 
+<!-- define change log event label -->
+  <key>Label</key>
+  <string>com.shellcast.daily.test.plist</string>
+
+<!-- define script that will run -->
   <key>ProgramArguments</key>
   <array>
-    <string>/Users/sheila/Documents/github_ncsu/shellcast/analysis/shellcast_daily_analysis.sh</string>
+    <string>/Users/sheila/Documents/github/shellcast-analysis/shellcast_daily_analysis.sh</string>
   </array>
 
 <!-- priority of scheduler -->
@@ -27,21 +30,24 @@
   <key>StartCalendarInterval</key>
   <dict>
     <key>Hour</key>
-    <integer>4</integer>
+    <integer>10</integer>
     <key>Minute</key>
-    <integer>0</integer>
+    <integer>31</integer>
   </dict>
 
+
   <key>RunAtLoad</key>
-  <true/>
+  <false/>
+  <key>KeepAlive</key>
+  <false/>
 
 <!-- do i need this? -->
-  <key>StandardErrorPath</key>
-  <string>/tmp/AlTest1.err</string>
+<!--  <key>StandardErrorPath</key> -->
+<!--  <string>/Users/sheila/Desktop/AlTest1.err</string> -->
 
 <!-- do i need this? -->
-  <key>StandardOutPath</key>
-  <string>/tmp/AlTest1.out</string>
+<!--  <key>StandardOutPath</key> -->
+<!--  <string>/Users/sheila/Desktop/AlTest1.out</string> -->
 
 </dict>
 </plist>
