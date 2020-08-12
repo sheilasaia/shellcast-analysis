@@ -1,4 +1,4 @@
-<!-- com.shellcast.dailyanalysis.cronjob.plist -->
+<!-- com.shellcast.dailyanalysis.cronjob.debug.plist -->
 <!-- store in the ~/Library/LaunchAgents folder -->
 <!-- launchd man: https://www.manpagez.com/man/5/launchd.plist/ -->
 <?xml version="1.0" encoding="UTF-8"?>
@@ -8,7 +8,7 @@
 
 <!-- define change log event label -->
   <key>Label</key>
-  <string>com.shellcast.dailyanalysis.cronjob.plist</string>
+  <string>com.shellcast.dailyanalysis.cronjob.debug.plist</string>
 
 <!-- define script that will run -->
   <key>ProgramArguments</key>
@@ -20,7 +20,7 @@
   <key>WorkingDirectory</key>
   <string>/Users/sheila/Documents/github_ncsu/shellcast/analysis/</string>
 
-<!-- priority of scheduler (range is -20 to 20 with default at 0) -->
+<!-- priority of scheduler (range is -20 to 20 with default at 0)-->
   <key>Nice</key>
   <integer>5</integer>
 
@@ -28,9 +28,9 @@
   <key>StartCalendarInterval</key>
   <dict>
     <key>Hour</key>
-    <integer>6</integer>
+    <integer>18</integer>
     <key>Minute</key>
-    <integer>0</integer>
+    <integer>21</integer>
   </dict>
 
 <!-- other settings -->

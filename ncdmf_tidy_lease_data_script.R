@@ -48,8 +48,8 @@ for (package in packages) {
 # ---- 2. define base paths ----
 # base path to data
 # data_base_path = "opt/analysis/data/" # set this and uncomment!
-data_base_path = "/Users/sheila/Documents/bae_shellcast_project/shellcast_analysis/web_app_data/"
-
+# data_base_path = "/Users/sheila/Documents/bae_shellcast_project/shellcast_analysis/web_app_data/"
+data_base_path = "/Users/sheila/Documents/github_ncsu/shellcast/analysis/data/"
 
 # ---- 3. defining paths and projections ----
 # path to raw lease spatial inputs
@@ -193,12 +193,13 @@ lease_data_centroids_join_no_geom <- lease_data_centroid_albers_join %>%
 
 # join sga and rainfall threshold data to lease polygons
 lease_data_albers_join <- lease_data_albers %>%
-  dplyr::left_join(lease_data_centroids_join_no_geom, by = "lease_id")
+  dplyr::left_join(lease_data_centroids_join_no_geom, by = "lease_id") %>%
+  dplyr::filter(rain_in > 0) # drop leases without rainfall thresholds (i.e., NA values) so don't have to fix for db import
 # when grow_area, rain_in, and rain_lab are NA this means they don't have a rainfall threshold (aren't in a current cmu)
 
 # resave centroids b/c lease_data_albers_join has full lease dataset
 lease_data_centroids_albers_final <- lease_data_albers_join %>%
-  st_centroid() 
+  st_centroid()
 # when grow_area, rain_in, and rain_lab are NA this means they don't have a rainfall threshold (aren't in a current cmu)
 
 
@@ -221,7 +222,7 @@ lease_data_centroid_wgs94 <- lease_data_centroids_albers_final %>%
 # ---- 9. simplify data for mysql db ----
 # select fields for mysql db
 lease_data_centroid_wgs94_db <- lease_data_centroid_wgs94 %>%
-  select(ncdmf_lease_id = lease_id,
+  dplyr::select(ncdmf_lease_id = lease_id,
          grow_area_name = grow_area,
          rainfall_thresh_in = rain_in)
 
@@ -232,11 +233,10 @@ lease_data_centroid_coords <- as.data.frame(st_coordinates(lease_data_centroid_w
 # save lease centroid data as tabular dataset
 lease_data_centroid_wgs94_db_tabular <- lease_data_centroid_wgs94_db %>%
   st_drop_geometry() %>%
-  bind_cols(lease_data_centroid_coords) %>%
-  na.omit() # drops all columns with an NA value so don't have to fix for db import
+  dplyr::bind_cols(lease_data_centroid_coords)
 
 
-# ---- 9. export data ----
+# ---- 10. export data ----
 # export data as shape file for record keeping
 # st_write(lease_data_albers_join, paste0(lease_data_spatial_output_path, "lease_bounds/lease_bounds_albers_", latest_date_uct_str, ".shp")) # includes date in file name
 # st_write(lease_data_centroids_albers_final, paste0(lease_data_spatial_output_path, "lease_centroids/lease_centroids_albers_", latest_date_uct_str, ".shp")) # includes date in file name

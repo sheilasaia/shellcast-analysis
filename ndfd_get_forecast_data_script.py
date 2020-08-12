@@ -39,13 +39,14 @@ from csv import writer
 # %% set paths here
 
 # base path to analysis
-# analysis_base_path = ".../analysis/" # set this and uncomment!
-analysis_base_path = "/Users/sheila/Documents/github/shellcast-analysis/"
+# analysis_base_path = "opt/analysis/" # set this and uncomment!
+# analysis_base_path = "/Users/sheila/Documents/github/shellcast-analysis/"
+analysis_base_path = "/Users/sheila/Documents/github_ncsu/shellcast/analysis/"
 
 # base path to data
-# data_base_path = ".../analysis/data/" # set this and uncomment!
-data_base_path = "/Users/sheila/Documents/bae_shellcast_project/shellcast_analysis/web_app_data/"
-
+# data_base_path = "opt/shellcast/analysis/data/" # set this and uncomment!
+# data_base_path = "/Users/sheila/Documents/bae_shellcast_project/shellcast_analysis/web_app_data/"
+data_base_path = "/Users/sheila/Documents/github_ncsu/shellcast/analysis/data/"
 
 # %% use set paths
 
@@ -60,6 +61,7 @@ functions_path = analysis_base_path + "functions/"
 
 exec(open((functions_path + "convert_sco_ndfd_datetime_str.py")).read())
 exec(open((functions_path + "get_sco_ndfd_data.py")).read())
+exec(open((functions_path + "aggregate_sco_ndfd_var_data.py")).read())
 exec(open((functions_path + "tidy_sco_ndfd_data.py")).read())
 exec(open((functions_path + "append_list_as_row.py")).read())
 
@@ -113,8 +115,9 @@ elif (datetime_now_round_uct >= datetime_noontoday_uct) & (datetime_now_round_uc
     temp_datetime_uct_str = datetime_noontoday_uct.strftime("%Y-%m-%d %H:%M")
 
 # temp_datetime_uct_str
+# temp_datetime_uct_str = '2020-08-03 00:00' # use this to test large closure probabilities
 
-#
+# 
 
 # get data
 
@@ -148,7 +151,7 @@ if (len(temp_data) > 0):
         # export data availability (i.e., append new row to data_log.csv)
         # data_availability_path = tabular_output_path + "data_available_" + temp_datetime_ymdh_str +  ".csv"
         # data_available_pd.to_csv(data_availability_path, index = False)
-        data_log_path = tabular_output_path + "data_log.csv" 
+        data_log_path = tabular_output_path + "data_log.csv"
         append_list_as_row(data_log_path, temp_data_log)
 
         # print status
