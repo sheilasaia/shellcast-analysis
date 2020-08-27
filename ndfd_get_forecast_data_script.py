@@ -117,7 +117,7 @@ elif (datetime_now_round_uct >= datetime_noontoday_uct) & (datetime_now_round_uc
 # temp_datetime_uct_str
 # temp_datetime_uct_str = '2020-08-03 00:00' # use this to test large closure probabilities
 
-# 
+#
 
 # get data
 
