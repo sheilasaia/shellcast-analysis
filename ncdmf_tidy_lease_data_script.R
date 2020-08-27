@@ -246,6 +246,10 @@ st_write(lease_data_centroids_albers_final, paste0(lease_data_spatial_output_pat
 # export tabular lease centroids for mysql db
 write_csv(lease_data_centroid_wgs94_db_tabular, paste0(lease_data_spatial_output_path, "lease_centroids/lease_centroids_db_wgs84.csv"))
 
+# export wgs84 data for vcl testing
+st_write(lease_data_wgs94, paste0(lease_data_spatial_output_path, "lease_bounds/lease_bounds_wgs84.shp"), delete_layer = TRUE)
+st_write(lease_data_centroid_wgs94, paste0(lease_data_spatial_output_path, "lease_centroids/lease_centroids_wgs84.shp"), delete_layer = TRUE)
+
 # export data as geojson for web app
 # write_file(lease_data_wgs94_geojson, paste0(lease_data_spatial_output_path, "lease_bounds/lease_bounds_wgs84_", latest_date_uct_str, ".geojson")) # includes date in file name
 # write_file(lease_data_centroid_wgs94_geojson, paste0(lease_data_spatial_output_path, "lease_centroids/lease_centroids_wgs84_", latest_date_uct_str, ".geojson")) # includes date in file name
